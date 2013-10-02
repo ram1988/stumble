@@ -13,10 +13,11 @@ import java.util.TreeSet;
 import org.json.*;
 
 import com.stumbleupon.reader.CSVReader;
+import com.stumbleupon.reader.DBAccess;
 
 public class ProportionFeatures extends FeatureGenerator {
 	
-	private List<String[]> list;
+	private List<Object[]> list;
 	private List<List<String>> tokenized;
 	private Map<String,Integer> evergreenMap;
 	private Map<String,Integer> ephimeralMap;
@@ -27,13 +28,13 @@ public class ProportionFeatures extends FeatureGenerator {
 		
 		//1-Training data,0-Test Data
 		if(train_or_test == 1) {
-			for(String[] str:list) {
+			for(Object[] str:list) {
 				//JSON representation 
 				String processedString = null;
 				JSONObject jsonObj;
 				try {
-					//System.out.println(str[2]);
-					jsonObj = new JSONObject(str[2]);
+					System.out.println(str[2]);
+					jsonObj = new JSONObject(str[2].toString());
 					processedString = (String)jsonObj.get("body").toString();
 				} catch (JSONException e) {
 					// TODO Auto-generated catch block
@@ -59,13 +60,13 @@ public class ProportionFeatures extends FeatureGenerator {
 			}
 		} else {
 			tokenized.clear();
-			for(String[] str:list) {
+			for(Object[] str:list) {
 				//JSON representation 
 				String processedString = null;
 				JSONObject jsonObj;
 				try {
 					//System.out.println(str[2]);
-					jsonObj = new JSONObject(str[2]);
+					jsonObj = new JSONObject(str[2].toString());
 					processedString = (String)jsonObj.get("body").toString();
 				} catch (JSONException e) {
 					// TODO Auto-generated catch block
@@ -95,7 +96,7 @@ public class ProportionFeatures extends FeatureGenerator {
 		Map<String,Integer> wordMap = new TreeMap<String,Integer>();
 		int idx = 0;
 		System.out.println("List Size:"+list.size());
-		for(String[] str:list) {
+		for(Object[] str:list) {
 			if(label.equals(str[str.length-1])) {
 				List<String> tok = tokenized.get(idx);
 				for(String s:tok) {
@@ -117,9 +118,11 @@ public class ProportionFeatures extends FeatureGenerator {
 	
 	@Override
 	public List<List<String>> generateFeaturesFromTrainData() {
-		CSVReader obj = new CSVReader("data/train.tsv","\t");
+		/*CSVReader obj = new CSVReader("data/train.tsv","\t");
 		list = obj.readCSV();
-		
+		*/
+		DBAccess db = new DBAccess();
+		list = db.getRecords("train");
 		preprocessData(1);
 		
 		evergreenMap = getWordMap("e");
@@ -158,8 +161,8 @@ public class ProportionFeatures extends FeatureGenerator {
 			
 			int total = set_toks.size();
 			List<String> features = new ArrayList<String>();
-			String[] item = list.get(idx);
-			String label = item[item.length-1];
+			Object[] item = list.get(idx);
+			String label = item[item.length-1].toString();
 			
 			if(total!=0) {				
 				features.add(( (Float) (((float)ever/(float)total)*100) ).toString());//Evergreen terms proportion
@@ -182,14 +185,14 @@ public class ProportionFeatures extends FeatureGenerator {
 				features.add("0");
 				
 			}
-			features.add(item[5]); //avglinksize
-			features.add(item[13]); //frameTagRatio
-			features.add(item[15]);//html_ratio
-			features.add(item[16]);//image_ratio
-			features.add(item[19]);//linkwordscore
-			features.add(item[22]);//numberOfLinks
-			features.add(item[23]);//numwords_in_url
-			features.add(item[25]);//spelling_errors_ratio
+			features.add(item[5].toString()); //avglinksize
+			features.add(item[13].toString()); //frameTagRatio
+			features.add(item[15].toString());//html_ratio
+			features.add(item[16].toString());//image_ratio
+			features.add(item[19].toString());//linkwordscore
+			features.add(item[22].toString());//numberOfLinks
+			features.add(item[23].toString());//numwords_in_url
+			features.add(item[25].toString());//spelling_errors_ratio
 			
 			features.add(label);//ClassLabel
 			
@@ -204,9 +207,11 @@ public class ProportionFeatures extends FeatureGenerator {
 
 	@Override
 	public List<List<String>> generateFeaturesFromTestData() {
-		CSVReader obj = new CSVReader("data/test.tsv","\t");
+		/*CSVReader obj = new CSVReader("data/test.tsv","\t");
 		list = obj.readCSV();
-		
+		*/
+		DBAccess db = new DBAccess();
+		list = db.getRecords("test");
 		preprocessData(0);
 		
 		List<List<String>> featureList = new ArrayList<List<String>>();
@@ -240,8 +245,8 @@ public class ProportionFeatures extends FeatureGenerator {
 			
 			int total = set_toks.size();
 			List<String> features = new ArrayList<String>();
-			String[] item = list.get(idx);
-			String label = item[item.length-1];
+			Object[] item = list.get(idx);
+			String label = item[item.length-1].toString();
 			
 			if(total!=0) {				
 				features.add(( (Float) (((float)ever/(float)total)*100) ).toString());//Evergreen terms proportion
@@ -254,14 +259,14 @@ public class ProportionFeatures extends FeatureGenerator {
 				features.add("0");
 				features.add("0");	
 			}
-			features.add(item[5]); //avglinksize
-			features.add(item[13]); //frameTagRatio
-			features.add(item[15]);//html_ratio
-			features.add(item[16]);//image_ratio
-			features.add(item[19]);//linkwordscore
-			features.add(item[22]);//numberOfLinks
-			features.add(item[23]);//numwords_in_url
-			features.add(item[25]);//spelling_errors_ratio
+			features.add(item[5].toString()); //avglinksize
+			features.add(item[13].toString()); //frameTagRatio
+			features.add(item[15].toString());//html_ratio
+			features.add(item[16].toString());//image_ratio
+			features.add(item[19].toString());//linkwordscore
+			features.add(item[22].toString());//numberOfLinks
+			features.add(item[23].toString());//numwords_in_url
+			features.add(item[25].toString());//spelling_errors_ratio
 			
 			featureList.add(features);
 			idx++;
@@ -277,7 +282,7 @@ public class ProportionFeatures extends FeatureGenerator {
 		List<List<String>> feats = feat.generateFeaturesFromTrainData();
 		FileWriter fw = null;
 		try {
-			fw = new FileWriter("train_features.csv");
+			fw = new FileWriter("train_mongo_features.csv");
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -312,7 +317,7 @@ public class ProportionFeatures extends FeatureGenerator {
 		feats = feat.generateFeaturesFromTestData();
 		fw = null;
 		try {
-			fw = new FileWriter("test_features.csv");
+			fw = new FileWriter("test_mongo_features.csv");
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
