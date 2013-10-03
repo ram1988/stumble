@@ -33,15 +33,35 @@ public class ProportionFeatures extends FeatureGenerator {
 				String processedString = null;
 				JSONObject jsonObj;
 				try {
-					System.out.println(str[2]);
-					jsonObj = new JSONObject(str[2].toString());
+					
+					String json_str = str[2].toString();
+					json_str = json_str.substring(1, json_str.length()-1);
+					//System.out.println(json_str);
+					json_str = json_str.replace("{", "");
+					json_str = json_str.replace("}", "");
+					//json_str = json_str.replace("title\":\"", "title");
+					System.out.println(json_str);
+					System.out.println("Idnex of:"+json_str.indexOf("\"",0));
+					json_str = "{" + json_str + "}";
+					json_str = json_str.replace("\\","\\\\");
+					if(json_str.indexOf("{title:")!=-1) {						
+						json_str = json_str.replace("{title:","{\"title\":\"").replace(",body:","\",\"body\":\"").replace(",url:","\",\"url\":\"").replace("}","\"}");
+					} 
+					else if(json_str.indexOf("{body:")!=-1) {
+						json_str = json_str.replace("{body:","{\"body\":\"").replace(",title:","\",\"title\":\"").replace(",url:","\",\"url\":\"").replace("}","\"}");
+					}
+					else if(json_str.indexOf("{url:")!=-1) {
+						json_str = json_str.replace("{url:","{\"url\":\"").replace(",title:","\",\"title\":\"").replace(",body:","\",\"body\":\"").replace("}","\"}");
+					}
+					//System.out.println(json_str);
+					jsonObj = new JSONObject(json_str);
 					processedString = (String)jsonObj.get("body").toString();
 				} catch (JSONException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				
-				str[str.length-1] = str[str.length-1].equals("1")?"e":"n";
+				str[str.length-1] = str[str.length-1].toString().equals("1")?"e":"n";
 				String[] tok = processedString.split(" ");
 				
 				List<String> tokens = new ArrayList<String>();
@@ -65,8 +85,28 @@ public class ProportionFeatures extends FeatureGenerator {
 				String processedString = null;
 				JSONObject jsonObj;
 				try {
-					//System.out.println(str[2]);
-					jsonObj = new JSONObject(str[2].toString());
+					
+					String json_str = str[2].toString();
+					json_str = json_str.substring(1, json_str.length()-1);
+					//System.out.println(json_str);
+					json_str = json_str.replace("{", "");
+					json_str = json_str.replace("}", "");
+					//json_str = json_str.replace("title\":\"", "title");
+					System.out.println(json_str);
+					System.out.println("Idnex of:"+json_str.indexOf("\"",0));
+					json_str = "{" + json_str + "}";
+					json_str = json_str.replace("\\","\\\\");
+					if(json_str.indexOf("{title:")!=-1) {						
+						json_str = json_str.replace("{title:","{\"title\":\"").replace(",body:","\",\"body\":\"").replace(",url:","\",\"url\":\"").replace("}","\"}");
+					} 
+					else if(json_str.indexOf("{body:")!=-1) {
+						json_str = json_str.replace("{body:","{\"body\":\"").replace(",title:","\",\"title\":\"").replace(",url:","\",\"url\":\"").replace("}","\"}");
+					}
+					else if(json_str.indexOf("{url:")!=-1) {
+						json_str = json_str.replace("{url:","{\"url\":\"").replace(",title:","\",\"title\":\"").replace(",body:","\",\"body\":\"").replace("}","\"}");
+					}
+					//System.out.println(json_str);
+					jsonObj = new JSONObject(json_str);
 					processedString = (String)jsonObj.get("body").toString();
 				} catch (JSONException e) {
 					// TODO Auto-generated catch block
@@ -97,7 +137,7 @@ public class ProportionFeatures extends FeatureGenerator {
 		int idx = 0;
 		System.out.println("List Size:"+list.size());
 		for(Object[] str:list) {
-			if(label.equals(str[str.length-1])) {
+			if(label.equals(str[str.length-1].toString())) {
 				List<String> tok = tokenized.get(idx);
 				for(String s:tok) {
 					//System.out.println((s.equals("2015,")?"------------EXISTS":""));
