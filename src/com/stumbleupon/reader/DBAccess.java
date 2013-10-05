@@ -1,6 +1,6 @@
 package com.stumbleupon.reader;
 
-import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 import com.mongodb.WriteConcern;
 import com.mongodb.DB;
@@ -19,12 +19,12 @@ import java.util.Set;
 
 public class DBAccess {
 	
-	private Mongo client;
+	private MongoClient client;
 	private DB db;
 	
 	public DBAccess() {
 		try {
-			client = new Mongo( "localhost" , 27017 );
+			client = new MongoClient( "localhost" , 27017 );
 			db = client.getDB("kdd");
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
@@ -52,10 +52,10 @@ public class DBAccess {
 	
 	public static void main(String ...a) {
 		
-		Mongo client = null;
+		MongoClient client = null;
 		
 		try {
-			client = new Mongo( "localhost" , 27017 );
+			client = new MongoClient( "localhost" , 27017 );
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
