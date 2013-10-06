@@ -1,32 +1,44 @@
 package com.stumbleupon.preprocessing;
 
-import com.alchemyapi.api.*;
-
-import org.xml.sax.SAXException;
-import org.w3c.dom.Document;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Map;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathExpressionException;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.xpath.XPathExpressionException;
 
-//mongo related
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+
+import com.alchemyapi.api.AlchemyAPI;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
 import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
-import com.mongodb.DB;
-import com.mongodb.DBCursor;
+import com.mongodb.QueryBuilder;
+//mongo related
 
-class CategoryKdd {
+class CategoryFixer {
 	public MongoClient mongoClient;
 	public DB db;
 	public DBCollection coll;
 	static AlchemyAPI alchemyObj;
+	
+	public String category;
+	public double score;
 	
     public static void main(String[] args)
         throws IOException, SAXException,
@@ -36,35 +48,66 @@ class CategoryKdd {
         alchemyObj = AlchemyAPI.GetInstanceFromFile("api_key.txt");
         
         //connect to mongo
-    	CategoryKdd ckdd = new CategoryKdd();
-    	ckdd.connectToMongo();
-    	ckdd.constructColl();
+    	CategoryFixer cf = new CategoryFixer();
+    	cf.connectToMongo();
+    	cf.constructColl();
     	
     	//Query all documents from mongo collection
-		DBCursor cursor = ckdd.coll.find();
-		
+		DBCursor cursor = cf.coll.find();
+		ArrayList<DBObject> unknownObjList = new ArrayList<DBObject>();
 		try {
 			while (cursor.hasNext()) {
 				DBObject trainDoc = cursor.next();
 				String url = (String)trainDoc.get("url");
 				String cat = (String)trainDoc.get("alchemy_category");
+				String boilerplate = (String)trainDoc.get("boilerplate");
+				boilerplate.replace("{title:", "");
+				boilerplate.replace(",body:", "");
+				boilerplate.replace(",url:", "");
+				boilerplate.replace("html}", "");
 				if(!cat.contentEquals("?")) {
 					continue;
 				}
 				try {
-				Document doc = alchemyObj.URLGetCategory(url);
-				System.out.println(getStringFromDocument(doc)+ "," + url);
-				}
-				catch (Exception e) {
-					
-				}
+					System.out.println(url + "," + cat + " calling API with Text");
+			        Document doc = alchemyObj.TextGetCategory(boilerplate);
+			        System.out.println(getStringFromDocument(doc));
+					ReadXML readXML = new ReadXML();
+					readXML.getCategory(getStringFromDocument(doc), cf);
+					System.out.println(cf.category + " " + cf.score);
+					DBObject query = QueryBuilder.start("_id").is(trainDoc.get("_id")).get();
+					BasicDBObject updtCategory = new BasicDBObject("alchemy_category", cf.category);
+					BasicDBObject updtScore = new BasicDBObject("alchemy_category_score", cf.score);
+					cf.coll.update(query, new BasicDBObject("$set", updtCategory));
+					cf.coll.update(query, new BasicDBObject("$set", updtScore));
+		        }
+		        catch(Exception e) {
+		        	try {
+		        		System.out.println(url + "," + cat + " calling API with url");
+		        		Document doc = alchemyObj.URLGetCategory(url);
+		        		System.out.println(getStringFromDocument(doc));
+						ReadXML readXML = new ReadXML();
+						readXML.getCategory(getStringFromDocument(doc), cf);
+						System.out.println(cf.category + " " + cf.score);
+						DBObject query = QueryBuilder.start("_id").is(trainDoc.get("_id")).get();
+						BasicDBObject updtCategory = new BasicDBObject("alchemy_category", cf.category);
+						BasicDBObject updtScore = new BasicDBObject("alchemy_category_score", cf.score);
+						cf.coll.update(query, new BasicDBObject("$set", updtCategory));
+						cf.coll.update(query, new BasicDBObject("$set", updtScore));
+		        	}
+		        	catch(Exception ex) {
+		        		System.out.println("Bummer! adding to unknown object list");
+		        		unknownObjList.add(trainDoc);
+		        	}
+		        }
 			}
 		}
 		finally {
 			cursor.close();
 		}
-		
-/*
+		System.out.println(unknownObjList.size() + " urls not categorized." );
+
+		/*
         // Categorize a web URL by topic.
         Document doc = alchemyObj.URLGetCategory("http://www.techcrunch.com/");
         System.out.println(getStringFromDocument(doc));
@@ -121,7 +164,8 @@ class CategoryKdd {
             transformer.transform(domSource, result);
 
             return writer.toString();
-        } catch (TransformerException ex) {
+        } 
+        catch (TransformerException ex) {
             ex.printStackTrace();
             return null;
         }
@@ -132,7 +176,6 @@ class CategoryKdd {
 			mongoClient = new MongoClient( "localhost" , 27017 );
 			db = mongoClient.getDB( "kdd" );
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		if (db == null) {

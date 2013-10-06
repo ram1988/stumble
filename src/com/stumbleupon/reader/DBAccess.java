@@ -33,7 +33,6 @@ public class DBAccess {
 	}
 
 	public List<Object[]> getRecords(String table_name) {
-		
 		List<Object[]> recordList = new ArrayList<Object[]>();
 		DBCollection table = db.getCollection(table_name);
 		
