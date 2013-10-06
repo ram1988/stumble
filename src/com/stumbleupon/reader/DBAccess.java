@@ -1,6 +1,6 @@
 package com.stumbleupon.reader;
 
-import com.mongodb.MongoClient;
+import com.mongodb.Mongo;
 import com.mongodb.MongoException;
 import com.mongodb.WriteConcern;
 import com.mongodb.DB;
@@ -33,6 +33,7 @@ public class DBAccess {
 	}
 
 	public List<Object[]> getRecords(String table_name) {
+		
 		List<Object[]> recordList = new ArrayList<Object[]>();
 		DBCollection table = db.getCollection(table_name);
 		

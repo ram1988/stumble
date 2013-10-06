@@ -12,6 +12,12 @@ import java.util.TreeSet;
 
 import org.json.*;
 
+import weka.core.Instances;
+
+import com.stumbleupon.classifier.BuildModelException;
+import com.stumbleupon.classifier.Classifiers;
+import com.stumbleupon.classifier.EvalResult;
+import com.stumbleupon.classifier.EvaluationException;
 import com.stumbleupon.reader.CSVReader;
 import com.stumbleupon.reader.DBAccess;
 
@@ -25,9 +31,11 @@ public class ProportionFeatures extends FeatureGenerator {
 	private void preprocessData(int train_or_test) {
 		
 		tokenized = new ArrayList<List<String>>();
+		String unwanted = "^[0-9]+[^0-9a-z]$|^[a-z]$|^[^0-9a-z]|^[0-9]*$";
 		
 		//1-Training data,0-Test Data
 		if(train_or_test == 1) {
+			
 			for(Object[] str:list) {
 				//JSON representation 
 				String processedString = null;
@@ -40,8 +48,8 @@ public class ProportionFeatures extends FeatureGenerator {
 					json_str = json_str.replace("{", "");
 					json_str = json_str.replace("}", "");
 					//json_str = json_str.replace("title\":\"", "title");
-					System.out.println(json_str);
-					System.out.println("Idnex of:"+json_str.indexOf("\"",0));
+					//System.out.println(json_str);
+					//System.out.println("Idnex of:"+json_str.indexOf("\"",0));
 					json_str = "{" + json_str + "}";
 					json_str = json_str.replace("\\","\\\\");
 					if(json_str.indexOf("{title:")!=-1) {						
@@ -68,12 +76,17 @@ public class ProportionFeatures extends FeatureGenerator {
 				for(String s:tok) {
 					 //lower case
 					 s = s.toLowerCase();
-					 //perform Stop word removal
-					 if(isStopWord(s)) {
+					 
+					 s = s.replaceAll("[^0-9a-z]","");
+					 
+					 //Number or single character removal  and perform Stop word removal
+					 if(s.matches(unwanted) || isStopWord(s)) {
 						 continue;
-					 }				
+					 }
+					 
 					//perform stemming
 					s = stemWords(s);
+					
 					tokens.add(s);
 				}
 				tokenized.add(tokens);
@@ -92,8 +105,8 @@ public class ProportionFeatures extends FeatureGenerator {
 					json_str = json_str.replace("{", "");
 					json_str = json_str.replace("}", "");
 					//json_str = json_str.replace("title\":\"", "title");
-					System.out.println(json_str);
-					System.out.println("Idnex of:"+json_str.indexOf("\"",0));
+					//System.out.println(json_str);
+					//System.out.println("Idnex of:"+json_str.indexOf("\"",0));
 					json_str = "{" + json_str + "}";
 					json_str = json_str.replace("\\","\\\\");
 					if(json_str.indexOf("{title:")!=-1) {						
@@ -119,8 +132,11 @@ public class ProportionFeatures extends FeatureGenerator {
 				for(String s:tok) {
 					 //lower case
 					 s = s.toLowerCase();
-					 //perform Stop word removal
-					 if(isStopWord(s)) {
+					 
+					 s = s.replaceAll("[^0-9a-z]","");
+					 
+					 //Number or single character removal  and perform Stop word removal
+					 if(s.matches(unwanted) || isStopWord(s)) {
 						 continue;
 					 }				
 					//perform stemming
@@ -135,7 +151,7 @@ public class ProportionFeatures extends FeatureGenerator {
 	private Map<String,Integer> getWordMap(String label) {
 		Map<String,Integer> wordMap = new TreeMap<String,Integer>();
 		int idx = 0;
-		System.out.println("List Size:"+list.size());
+		//System.out.println("List Size:"+list.size());
 		for(Object[] str:list) {
 			if(label.equals(str[str.length-1].toString())) {
 				List<String> tok = tokenized.get(idx);
@@ -151,13 +167,13 @@ public class ProportionFeatures extends FeatureGenerator {
 			}
 			idx++;
 		}
-		System.out.println("Map Size:"+wordMap.size());
+		//System.out.println("Map Size:"+wordMap.size());
 		return wordMap;
 	}
 	
 	
 	@Override
-	public List<List<String>> generateFeaturesFromTrainData() {
+	public List<List<Object>> generateFeaturesFromTrainData() {
 		/*CSVReader obj = new CSVReader("data/train.tsv","\t");
 		list = obj.readCSV();
 		*/
@@ -168,7 +184,7 @@ public class ProportionFeatures extends FeatureGenerator {
 		evergreenMap = getWordMap("e");
 		ephimeralMap = getWordMap("n");
 		
-		List<List<String>> featureList = new ArrayList<List<String>>();
+		List<List<Object>> featureList = new ArrayList<List<Object>>();
 		
 		int idx = 0;
 		Set<String> set_toks = new TreeSet<String>();
@@ -200,13 +216,13 @@ public class ProportionFeatures extends FeatureGenerator {
 			}
 			
 			int total = set_toks.size();
-			List<String> features = new ArrayList<String>();
+			List<Object> features = new ArrayList<Object>();
 			Object[] item = list.get(idx);
 			String label = item[item.length-1].toString();
 			
 			if(total!=0) {				
-				features.add(( (Float) (((float)ever/(float)total)*100) ).toString());//Evergreen terms proportion
-				features.add(( (Float) (((float)ephi/(float)total)*100) ).toString());//Ephimeral terms proportion
+				features.add(new Double(( (Float) (((float)ever/(float)total)*100) ).toString()) );//Evergreen terms proportion
+				features.add(new Double(( (Float) (((float)ephi/(float)total)*100) ).toString()) );//Ephimeral terms proportion
 			} else {
 				//List<String> features = new ArrayList<String>();
 								
@@ -221,18 +237,18 @@ public class ProportionFeatures extends FeatureGenerator {
 					features.add("0");
 					features.add("100.0");
 				}*/
-				features.add("0");
-				features.add("0");
+				features.add(0.0);
+				features.add(0.0);
 				
 			}
-			features.add(item[5].toString()); //avglinksize
-			features.add(item[13].toString()); //frameTagRatio
-			features.add(item[15].toString());//html_ratio
-			features.add(item[16].toString());//image_ratio
-			features.add(item[19].toString());//linkwordscore
-			features.add(item[22].toString());//numberOfLinks
-			features.add(item[23].toString());//numwords_in_url
-			features.add(item[25].toString());//spelling_errors_ratio
+			features.add(new Double(item[5].toString())); //avglinksize
+			features.add(new Double(item[13].toString())); //frameTagRatio
+			features.add(new Double(item[15].toString()));//html_ratio
+			features.add(new Double(item[16].toString()));//image_ratio
+			features.add(new Double(item[19].toString()));//linkwordscore
+			features.add(new Double(item[22].toString()));//numberOfLinks
+			features.add(new Double(item[23].toString()));//numwords_in_url
+			features.add(new Double(item[25].toString()));//spelling_errors_ratio
 			
 			features.add(label);//ClassLabel
 			
@@ -246,7 +262,7 @@ public class ProportionFeatures extends FeatureGenerator {
 	
 
 	@Override
-	public List<List<String>> generateFeaturesFromTestData() {
+	public List<List<Object>> generateFeaturesFromTestData() {
 		/*CSVReader obj = new CSVReader("data/test.tsv","\t");
 		list = obj.readCSV();
 		*/
@@ -254,7 +270,7 @@ public class ProportionFeatures extends FeatureGenerator {
 		list = db.getRecords("test");
 		preprocessData(0);
 		
-		List<List<String>> featureList = new ArrayList<List<String>>();
+		List<List<Object>> featureList = new ArrayList<List<Object>>();
 		
 		int idx = 0;
 		Set<String> set_toks = new TreeSet<String>();
@@ -284,29 +300,31 @@ public class ProportionFeatures extends FeatureGenerator {
 			}
 			
 			int total = set_toks.size();
-			List<String> features = new ArrayList<String>();
+			List<Object> features = new ArrayList<Object>();
 			Object[] item = list.get(idx);
 			String label = item[item.length-1].toString();
 			
 			if(total!=0) {				
-				features.add(( (Float) (((float)ever/(float)total)*100) ).toString());//Evergreen terms proportion
-				features.add(( (Float) (((float)ephi/(float)total)*100) ).toString());//Ephimeral terms proportion
+				features.add( new Double(( (Float) (((float)ever/(float)total)*100) ).toString()) );//Evergreen terms proportion
+				features.add( new Double(( (Float) (((float)ephi/(float)total)*100) ).toString()) );//Ephimeral terms proportion
 			} else {
 				//List<String> features = new ArrayList<String>();
 								
 				//String[] item = list.get(idx);
 				//String label = item[item.length-1];
-				features.add("0");
-				features.add("0");	
+				features.add(0.0);
+				features.add(0.0);	
 			}
-			features.add(item[5].toString()); //avglinksize
-			features.add(item[13].toString()); //frameTagRatio
-			features.add(item[15].toString());//html_ratio
-			features.add(item[16].toString());//image_ratio
-			features.add(item[19].toString());//linkwordscore
-			features.add(item[22].toString());//numberOfLinks
-			features.add(item[23].toString());//numwords_in_url
-			features.add(item[25].toString());//spelling_errors_ratio
+			features.add(new Double(item[5].toString())); //avglinksize
+			features.add(new Double(item[13].toString())); //frameTagRatio
+			features.add(new Double(item[15].toString()));//html_ratio
+			features.add(new Double(item[16].toString()));//image_ratio
+			features.add(new Double(item[19].toString()));//linkwordscore
+			features.add(new Double(item[22].toString()));//numberOfLinks
+			features.add(new Double(item[23].toString()));//numwords_in_url
+			features.add(new Double(item[25].toString()));//spelling_errors_ratio
+			
+			features.add("?");//ClassLabel
 			
 			featureList.add(features);
 			idx++;
@@ -315,12 +333,15 @@ public class ProportionFeatures extends FeatureGenerator {
 		return featureList;
 	}
 	
-	public static void main(String[] args) { 
+	public static void main(String[] args) {
+		
+		String[] attribNames = {"evergreen","ephimeral","avglinksize","frameTagRatio","html_ratio","image_ratio","linkwordscore","numberOfLinks","numwords_in_url","spelling_errors_ratio","class"};
+		
 		ProportionFeatures feat = new ProportionFeatures();
 		
 		//Generating Train Features
-		List<List<String>> feats = feat.generateFeaturesFromTrainData();
-		FileWriter fw = null;
+		List<List<Object>> feats = feat.generateFeaturesFromTrainData();
+		/*FileWriter fw = null;
 		try {
 			fw = new FileWriter("train_mongo_features.csv");
 		} catch (IOException e1) {
@@ -333,7 +354,7 @@ public class ProportionFeatures extends FeatureGenerator {
 		try {
 			int len = feats.get(0).size();
 			bw.write("evergreen,ephimeral,avglinksize,frameTagRatio,html_ratio,image_ratio,linkwordscore,numberOfLinks,numwords_in_url,spelling_errors_ratio,class\n");
-			for(List<String> features:feats) {
+			for(List<Object> features:feats) {
 				for(int i=0;i<len-1;i++) {
 					bw.write(features.get(i)+",");
 				}
@@ -349,13 +370,21 @@ public class ProportionFeatures extends FeatureGenerator {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		}*/
+	
+		//Programmatic Classification 
+		//Build Model
+		try {
+			Classifiers.trainClassifier("bayes", feats,attribNames);
+		} catch (BuildModelException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
 		}
 		
-		System.out.println("The train feature size is--->"+feats.size());
 		
 		//Generating Test Features
 		feats = feat.generateFeaturesFromTestData();
-		fw = null;
+		/*fw = null;
 		try {
 			fw = new FileWriter("test_mongo_features.csv");
 		} catch (IOException e1) {
@@ -368,11 +397,11 @@ public class ProportionFeatures extends FeatureGenerator {
 		try {
 			int len = feats.get(0).size();
 			bw.write("evergreen,ephimeral,avglinksize,frameTagRatio,html_ratio,image_ratio,linkwordscore,numberOfLinks,numwords_in_url,spelling_errors_ratio,class\n");
-			for(List<String> features:feats) {
+			for(List<Object> features:feats) {
 				for(int i=0;i<len-1;i++) {
 					bw.write(features.get(i)+",");
 				}
-				bw.write(features.get(len-1)+",?\n");
+				bw.write(features.get(len-1)+"\n");
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -384,9 +413,23 @@ public class ProportionFeatures extends FeatureGenerator {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		}
+		}*/
 		
-		System.out.println("The test feature size is--->"+feats.size());
+		//Test Model
+		EvalResult result = null;
+		try {
+			result = Classifiers.testClassifier(feats, attribNames);
+		} catch (EvaluationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+						  
+		
+		//System.out.println("Predicted Class Label--->"+result.getClassLabel());
+		System.out.println("AUC Metric--->"+result.getAUC());
+		System.out.println("Precision--->"+result.getPrecision());
+		System.out.println("Recall--->"+result.getRecall());
+		System.out.println("F-Measure--->"+result.getFmeasure());
 	}
 
 
