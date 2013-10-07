@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.stumbleupon.reader.DBAccess;
+
 import weka.core.Attribute;
 import weka.core.FastVector;
 import weka.core.Instance;
@@ -63,6 +65,36 @@ public abstract class FeatureGenerator {
 	
 	public String stemWords(String input) {
 		return PorterStemmer.stem(input);
+	}
+	
+	public List<Object[]> getCompetitionFeatures(boolean isTrain)  {
+		DBAccess db = new DBAccess();
+		List<Object[]> list = db.getRecords(isTrain?"train":"test");
+		return list;
+	}
+	
+	public String formatStringToJSON(String json_str) {
+		
+		json_str = json_str.substring(1, json_str.length()-1);
+		//System.out.println(json_str);
+		json_str = json_str.replace("{", "");
+		json_str = json_str.replace("}", "");
+		//json_str = json_str.replace("title\":\"", "title");
+		//System.out.println(json_str);
+		//System.out.println("Idnex of:"+json_str.indexOf("\"",0));
+		json_str = "{" + json_str + "}";
+		json_str = json_str.replace("\\","\\\\");
+		if(json_str.indexOf("{title:")!=-1) {						
+			json_str = json_str.replace("{title:","{\"title\":\"").replace(",body:","\",\"body\":\"").replace(",url:","\",\"url\":\"").replace("}","\"}");
+		} 
+		else if(json_str.indexOf("{body:")!=-1) {
+			json_str = json_str.replace("{body:","{\"body\":\"").replace(",title:","\",\"title\":\"").replace(",url:","\",\"url\":\"").replace("}","\"}");
+		}
+		else if(json_str.indexOf("{url:")!=-1) {
+			json_str = json_str.replace("{url:","{\"url\":\"").replace(",title:","\",\"title\":\"").replace(",body:","\",\"body\":\"").replace("}","\"}");
+		}
+		
+		return json_str;
 	}
 	
 	public static Instances convertToWekaFeatures(List<List<Object>> features, String[] attributeNames,boolean isTrainPhase) {

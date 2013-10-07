@@ -41,27 +41,7 @@ public class ProportionFeatures extends FeatureGenerator {
 				String processedString = null;
 				JSONObject jsonObj;
 				try {
-					
-					String json_str = str[2].toString();
-					json_str = json_str.substring(1, json_str.length()-1);
-					//System.out.println(json_str);
-					json_str = json_str.replace("{", "");
-					json_str = json_str.replace("}", "");
-					//json_str = json_str.replace("title\":\"", "title");
-					//System.out.println(json_str);
-					//System.out.println("Idnex of:"+json_str.indexOf("\"",0));
-					json_str = "{" + json_str + "}";
-					json_str = json_str.replace("\\","\\\\");
-					if(json_str.indexOf("{title:")!=-1) {						
-						json_str = json_str.replace("{title:","{\"title\":\"").replace(",body:","\",\"body\":\"").replace(",url:","\",\"url\":\"").replace("}","\"}");
-					} 
-					else if(json_str.indexOf("{body:")!=-1) {
-						json_str = json_str.replace("{body:","{\"body\":\"").replace(",title:","\",\"title\":\"").replace(",url:","\",\"url\":\"").replace("}","\"}");
-					}
-					else if(json_str.indexOf("{url:")!=-1) {
-						json_str = json_str.replace("{url:","{\"url\":\"").replace(",title:","\",\"title\":\"").replace(",body:","\",\"body\":\"").replace("}","\"}");
-					}
-					//System.out.println(json_str);
+					String json_str = formatStringToJSON(str[2].toString());
 					jsonObj = new JSONObject(json_str);
 					processedString = (String)jsonObj.get("body").toString();
 				} catch (JSONException e) {
@@ -97,28 +77,8 @@ public class ProportionFeatures extends FeatureGenerator {
 				//JSON representation 
 				String processedString = null;
 				JSONObject jsonObj;
-				try {
-					
-					String json_str = str[2].toString();
-					json_str = json_str.substring(1, json_str.length()-1);
-					//System.out.println(json_str);
-					json_str = json_str.replace("{", "");
-					json_str = json_str.replace("}", "");
-					//json_str = json_str.replace("title\":\"", "title");
-					//System.out.println(json_str);
-					//System.out.println("Idnex of:"+json_str.indexOf("\"",0));
-					json_str = "{" + json_str + "}";
-					json_str = json_str.replace("\\","\\\\");
-					if(json_str.indexOf("{title:")!=-1) {						
-						json_str = json_str.replace("{title:","{\"title\":\"").replace(",body:","\",\"body\":\"").replace(",url:","\",\"url\":\"").replace("}","\"}");
-					} 
-					else if(json_str.indexOf("{body:")!=-1) {
-						json_str = json_str.replace("{body:","{\"body\":\"").replace(",title:","\",\"title\":\"").replace(",url:","\",\"url\":\"").replace("}","\"}");
-					}
-					else if(json_str.indexOf("{url:")!=-1) {
-						json_str = json_str.replace("{url:","{\"url\":\"").replace(",title:","\",\"title\":\"").replace(",body:","\",\"body\":\"").replace("}","\"}");
-					}
-					//System.out.println(json_str);
+				try {					
+					String json_str = formatStringToJSON(str[2].toString());
 					jsonObj = new JSONObject(json_str);
 					processedString = (String)jsonObj.get("body").toString();
 				} catch (JSONException e) {
@@ -177,8 +137,7 @@ public class ProportionFeatures extends FeatureGenerator {
 		/*CSVReader obj = new CSVReader("data/train.tsv","\t");
 		list = obj.readCSV();
 		*/
-		DBAccess db = new DBAccess();
-		list = db.getRecords("train");
+		list = getCompetitionFeatures(true);
 		preprocessData(1);
 		
 		evergreenMap = getWordMap("e");
@@ -266,8 +225,7 @@ public class ProportionFeatures extends FeatureGenerator {
 		/*CSVReader obj = new CSVReader("data/test.tsv","\t");
 		list = obj.readCSV();
 		*/
-		DBAccess db = new DBAccess();
-		list = db.getRecords("test");
+		list = getCompetitionFeatures(false);
 		preprocessData(0);
 		
 		List<List<Object>> featureList = new ArrayList<List<Object>>();

@@ -1,6 +1,7 @@
 package com.stumbleupon.reader;
 
 import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 import com.mongodb.WriteConcern;
 import com.mongodb.DB;
