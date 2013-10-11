@@ -1,5 +1,6 @@
 package com.stumbleupon.features;
 
+import java.util.List;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -21,7 +22,7 @@ import com.stumbleupon.classifier.EvaluationException;
 import com.stumbleupon.reader.CSVReader;
 import com.stumbleupon.reader.DBAccess;
 
-public class ProportionFeatures extends FeatureGenerator {
+public class PropCompFeatures extends FeatureGenerator {
 	
 	private List<Object[]> list;
 	private List<List<String>> tokenized;
@@ -200,7 +201,7 @@ public class ProportionFeatures extends FeatureGenerator {
 				features.add(0.0);
 				
 			}
-			/*features.add(new Double(item[5].toString())); //avglinksize
+			features.add(new Double(item[5].toString())); //avglinksize
 			features.add(new Double(item[13].toString())); //frameTagRatio
 			features.add(new Double(item[15].toString()));//html_ratio
 			features.add(new Double(item[16].toString()));//image_ratio
@@ -208,7 +209,7 @@ public class ProportionFeatures extends FeatureGenerator {
 			features.add(new Double(item[22].toString()));//numberOfLinks
 			features.add(new Double(item[23].toString()));//numwords_in_url
 			features.add(new Double(item[25].toString()));//spelling_errors_ratio
-			*/
+			
 			features.add(label);//ClassLabel
 			
 			featureList.add(features);
@@ -273,7 +274,7 @@ public class ProportionFeatures extends FeatureGenerator {
 				features.add(0.0);
 				features.add(0.0);	
 			}
-			/*features.add(new Double(item[5].toString())); //avglinksize
+			features.add(new Double(item[5].toString())); //avglinksize
 			features.add(new Double(item[13].toString())); //frameTagRatio
 			features.add(new Double(item[15].toString()));//html_ratio
 			features.add(new Double(item[16].toString()));//image_ratio
@@ -281,7 +282,7 @@ public class ProportionFeatures extends FeatureGenerator {
 			features.add(new Double(item[22].toString()));//numberOfLinks
 			features.add(new Double(item[23].toString()));//numwords_in_url
 			features.add(new Double(item[25].toString()));//spelling_errors_ratio
-			*/
+			
 			features.add("?");//ClassLabel
 			
 			featureList.add(features);
@@ -293,9 +294,9 @@ public class ProportionFeatures extends FeatureGenerator {
 	
 	public static void main(String[] args) {
 		
-		String[] attribNames = {"evergreen","ephimeral","class"};
+		String[] attribNames = {"evergreen","ephimeral","avglinksize","frameTagRatio","html_ratio","image_ratio","linkwordscore","numberOfLinks","numwords_in_url","spelling_errors_ratio","class"};
 		
-		ProportionFeatures feat = new ProportionFeatures();
+		PropCompFeatures feat = new PropCompFeatures();
 		
 		//Generating Train Features
 		List<List<Object>> feats = feat.generateFeaturesFromTrainData();
