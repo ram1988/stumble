@@ -1,7 +1,7 @@
 package com.stumbleupon.classifier;
 
 public class EvalResult {
-	private String classLabel;
+	private String[] classLabel;
 	private double AUC;
 	private double precision;
 	private double recall;
@@ -27,10 +27,10 @@ public class EvalResult {
 		this.fmeasure = fmeasure;
 	}
 	
-	public String getClassLabel() {
+	public String[] getClassLabel() {
 		return classLabel;
 	}
-	public void setClassLabel(String classLabel) {
+	public void setClassLabel(String[] classLabel) {
 		this.classLabel = classLabel;
 	}
 	public double getAUC() {

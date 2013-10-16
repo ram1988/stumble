@@ -7,8 +7,11 @@ import com.stumbleupon.features.FeatureGenerator;
 
 import weka.classifiers.Evaluation;
 import weka.classifiers.bayes.NaiveBayes;
+import weka.classifiers.functions.LibSVM;
+import weka.core.Attribute;
 import weka.core.Instance;
 import weka.core.Instances;
+import weka.core.SparseInstance;
 
 public class Classifiers {
 	
@@ -73,8 +76,16 @@ public class Classifiers {
 				
 				System.out.println("Evaluation on training set-->"+testModel.toSummaryString());
 				//Predicting the test data
-				res = testModel.evaluateModel(bayesClassifier, testData);
-				result.setClassLabel("");//yet to find to get the class label
+				String[] predictions = new String[testData.numInstances()];
+				 
+				//Predicting the test data
+				Attribute classAttrib = testData.classAttribute();
+				for(int i=0;i<testData.numInstances();i++) {
+					double pre = bayesClassifier.classifyInstance(testData.instance(i)) ;
+					predictions[i] = classAttrib.value((int)pre);
+				}
+				
+				result.setClassLabel(predictions);//yet to find to get the class label
 				
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
@@ -88,17 +99,73 @@ public class Classifiers {
 	
 	private static class SVMClassifier extends StumbleClassifier {
 
-		@Override
-		void buildModel(Instances featureSet) {
-			// TODO Auto-generated method stub
-			
+		private LibSVM svm;
+		private Instances trainingSet;
+		
+		SVMClassifier() {
+			svm = new LibSVM();
 		}
-
+		
+		@Override
+		void buildModel(Instances featureSet)throws BuildModelException {
+			try {
+				trainingSet = featureSet;
+				svm.buildClassifier(trainingSet);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				throw new BuildModelException("Build Model Exception::"+e.getMessage(),e);
+			}
+		}
 
 		@Override
 		EvalResult testModel(Instances testData) throws EvaluationException {
-			// TODO Auto-generated method stub
-			return null;
+			Evaluation testModel = null;
+			EvalResult result = null;
+			
+			try {
+				testModel = new Evaluation(trainingSet);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				throw new EvaluationException("Evaluation Exception::"+e.getMessage(),e);
+			}
+			
+				 
+			try {
+				//Object[] predictions = new Object[testData.numInstances()];
+				System.out.println("classifier-->"+svm);
+				System.out.println("testData-->"+testData.numInstances());
+				System.out.println("test data print over");
+				
+						
+				result = new EvalResult();
+				//Evaluation on trainingSet
+				double[] res = testModel.evaluateModel(svm, trainingSet);
+				result.setAUC(testModel.areaUnderROC(0));
+				result.setPrecision(testModel.precision(0));
+				result.setRecall(testModel.recall(0));
+				result.setFmeasure(testModel.fMeasure(0));
+				
+				System.out.println("Evaluation on training set-->"+testModel.toSummaryString());
+				//Predicting the test data
+				String[] predictions = new String[testData.numInstances()];
+				 
+				//Predicting the test data
+				Attribute classAttrib = testData.classAttribute();
+				for(int i=0;i<testData.numInstances();i++) {
+					double pre = svm.classifyInstance(testData.instance(i)) ;
+					predictions[i] = classAttrib.value((int)pre);
+				}
+				//res = testModel.evaluateModel(bayesClassifier, testData);
+				result.setClassLabel(predictions);//yet to find to get the class label
+				
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				throw new EvaluationException("Evaluation Exception::"+e.getMessage(),e);
+			}
+			return result;
 		}
 		
 		

@@ -1,6 +1,5 @@
 package com.stumbleupon.features;
 
-import java.util.List;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -50,7 +49,7 @@ public class PropCompFeatures extends FeatureGenerator {
 					e.printStackTrace();
 				}
 				
-				str[str.length-1] = str[str.length-1].toString().equals("1")?"e":"n";
+				//str[str.length-1] = str[str.length-1].toString().equals("1")?"e":"n";
 				String[] tok = processedString.split(" ");
 				
 				List<String> tokens = new ArrayList<String>();
@@ -74,7 +73,7 @@ public class PropCompFeatures extends FeatureGenerator {
 			}
 		} else {
 			tokenized.clear();
-			for(Object[] str:list) {
+			for(Object[] str:list) { 
 				//JSON representation 
 				String processedString = null;
 				JSONObject jsonObj;
@@ -138,11 +137,12 @@ public class PropCompFeatures extends FeatureGenerator {
 		/*CSVReader obj = new CSVReader("data/train.tsv","\t");
 		list = obj.readCSV();
 		*/
-		list = getCompetitionFeatures(true);
+		list = getCompetitionFeatures(true,true);
+				
 		preprocessData(1);
 		
-		evergreenMap = getWordMap("e");
-		ephimeralMap = getWordMap("n");
+		evergreenMap = getWordMap("1");
+		ephimeralMap = getWordMap("0");
 		
 		List<List<Object>> featureList = new ArrayList<List<Object>>();
 		
@@ -181,8 +181,8 @@ public class PropCompFeatures extends FeatureGenerator {
 			String label = item[item.length-1].toString();
 			
 			if(total!=0) {				
-				features.add(new Double(( (Float) (((float)ever/(float)total)*100) ).toString()) );//Evergreen terms proportion
-				features.add(new Double(( (Float) (((float)ephi/(float)total)*100) ).toString()) );//Ephimeral terms proportion
+				features.add( new Double(((float)ever/(float)total)) );//Evergreen terms proportion
+				features.add( new Double(((float)ephi/(float)total)) );//Ephimeral terms proportion
 			} else {
 				//List<String> features = new ArrayList<String>();
 								
@@ -226,7 +226,8 @@ public class PropCompFeatures extends FeatureGenerator {
 		/*CSVReader obj = new CSVReader("data/test.tsv","\t");
 		list = obj.readCSV();
 		*/
-		list = getCompetitionFeatures(false);
+		list = getCompetitionFeatures(false,true);
+				
 		preprocessData(0);
 		
 		List<List<Object>> featureList = new ArrayList<List<Object>>();
@@ -253,7 +254,11 @@ public class PropCompFeatures extends FeatureGenerator {
 				 */
 				if(ev_ct > ep_ct) {
 					ever++;
+				} 
+				else if(ev_ct < ep_ct){
+					ephi++;
 				} else {
+					ever++;
 					ephi++;
 				}
 			}
@@ -261,11 +266,10 @@ public class PropCompFeatures extends FeatureGenerator {
 			int total = set_toks.size();
 			List<Object> features = new ArrayList<Object>();
 			Object[] item = list.get(idx);
-			String label = item[item.length-1].toString();
 			
 			if(total!=0) {				
-				features.add( new Double(( (Float) (((float)ever/(float)total)*100) ).toString()) );//Evergreen terms proportion
-				features.add( new Double(( (Float) (((float)ephi/(float)total)*100) ).toString()) );//Ephimeral terms proportion
+				features.add( new Double(((float)ever/(float)total)) );//Evergreen terms proportion
+				features.add( new Double(((float)ephi/(float)total)) );//Ephimeral terms proportion
 			} else {
 				//List<String> features = new ArrayList<String>();
 								
@@ -294,7 +298,7 @@ public class PropCompFeatures extends FeatureGenerator {
 	
 	public static void main(String[] args) {
 		
-		String[] attribNames = {"evergreen","ephimeral","avglinksize","frameTagRatio","html_ratio","image_ratio","linkwordscore","numberOfLinks","numwords_in_url","spelling_errors_ratio","class"};
+		String[] attribNames = {"evergreen","ephimeral","class"};
 		
 		PropCompFeatures feat = new PropCompFeatures();
 		
@@ -334,6 +338,7 @@ public class PropCompFeatures extends FeatureGenerator {
 		//Programmatic Classification 
 		//Build Model
 		try {
+			//Classifiers.trainClassifier("svm", feats,attribNames);
 			Classifiers.trainClassifier("bayes", feats,attribNames);
 		} catch (BuildModelException e2) {
 			// TODO Auto-generated catch block
@@ -389,6 +394,45 @@ public class PropCompFeatures extends FeatureGenerator {
 		System.out.println("Precision--->"+result.getPrecision());
 		System.out.println("Recall--->"+result.getRecall());
 		System.out.println("F-Measure--->"+result.getFmeasure());
+		
+		
+		FileWriter fw = null;
+		try {
+			fw = new FileWriter("test_labels.txt");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		BufferedWriter bw = new BufferedWriter(fw);
+		List<Object[]> list = getCompetitionFeatures(false,true);
+				
+		int trueCt = 0, falseCt = 0;
+		try {
+			int i = 0;
+			for(String predicted:result.getClassLabel()) {
+				Object[] item = list.get(i);
+				String original = item[item.length-1].toString();
+				if(predicted.equals(original))  
+					trueCt++;
+				else 
+					falseCt++;
+				
+				bw.write(predicted+"=="+item[item.length-1].toString()+"\n");
+				i++;
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			try {
+				bw.write("Truely classified3433-->"+trueCt+"------Falsely classified--->"+falseCt);
+				bw.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 
 

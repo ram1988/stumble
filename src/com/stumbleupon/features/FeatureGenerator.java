@@ -20,6 +20,8 @@ import weka.core.Instances;
 public abstract class FeatureGenerator {
 	
 	private List<String> stopWords;
+	
+	
 	public abstract List<List<Object>> generateFeaturesFromTrainData();
 	public abstract List<List<Object>> generateFeaturesFromTestData();
 	
@@ -67,9 +69,22 @@ public abstract class FeatureGenerator {
 		return PorterStemmer.stem(input);
 	}
 	
-	public List<Object[]> getCompetitionFeatures(boolean isTrain)  {
+	//if isTrainWithin is true, 75% of training dataset will be for training and remaining 25% for testing
+	public static List<Object[]> getCompetitionFeatures(boolean isTrain,boolean isTrainWithin)  {
 		DBAccess db = new DBAccess();
-		List<Object[]> list = db.getRecords(isTrain?"train":"test");
+		List<Object[]> list = null;
+		
+		if(isTrainWithin && isTrain) {
+			list = db.getRecords("train");
+			list = list.subList(0, (int)(0.75*list.size()) );
+		} 
+		else if(isTrainWithin && !isTrain)  {
+			list = db.getRecords("train");
+			list = list.subList((int)(0.75*list.size()), list.size() );
+		} else { 
+			list = db.getRecords(isTrain?"train":"test");
+		}
+		
 		return list;
 	}
 	
@@ -113,9 +128,11 @@ public abstract class FeatureGenerator {
 		
 		FastVector classVector = new FastVector(2);
 		if(isTrainPhase) {
-			classVector.addElement("e");//evergreen
-			classVector.addElement("n");//ephemeral
+			classVector.addElement("0");//evergreen
+			classVector.addElement("1");//ephemeral
 		} else {
+			classVector.addElement("0");//evergreen
+			classVector.addElement("1");//ephemeral
 			classVector.addElement("?");
 		}
 		
