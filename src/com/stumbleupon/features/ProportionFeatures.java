@@ -302,6 +302,8 @@ public class ProportionFeatures extends FeatureGenerator {
 		
 		ProportionFeatures feat = new ProportionFeatures();
 		
+		String classifier = "ann";
+		
 		//Generating Train Features
 		List<List<Object>> feats = feat.generateFeaturesFromTrainData();
 		/*FileWriter fw = null;
@@ -338,8 +340,7 @@ public class ProportionFeatures extends FeatureGenerator {
 		//Programmatic Classification 
 		//Build Model
 		try {
-			//Classifiers.trainClassifier("svm", feats,attribNames);
-			Classifiers.trainClassifier("svm", feats,attribNames);
+			Classifiers.trainClassifier(classifier, feats,attribNames);
 		} catch (BuildModelException e2) {
 			// TODO Auto-generated catch block
 			e2.printStackTrace();
@@ -398,7 +399,7 @@ public class ProportionFeatures extends FeatureGenerator {
 		
 		FileWriter fw = null;
 		try {
-			fw = new FileWriter("test_labels.txt");
+			fw = new FileWriter("test_labels_"+classifier+".txt");
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();

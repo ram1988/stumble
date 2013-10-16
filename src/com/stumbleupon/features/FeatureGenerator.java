@@ -127,12 +127,9 @@ public abstract class FeatureGenerator {
 		}
 		
 		FastVector classVector = new FastVector(2);
-		if(isTrainPhase) {
-			classVector.addElement("0");//evergreen
-			classVector.addElement("1");//ephemeral
-		} else {
-			classVector.addElement("0");//evergreen
-			classVector.addElement("1");//ephemeral
+		classVector.addElement("0");//evergreen
+		classVector.addElement("1");//ephemeral
+		if(!isTrainPhase) {
 			classVector.addElement("?");
 		}
 		
