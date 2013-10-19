@@ -5,7 +5,7 @@ import weka.core.*;
 import weka.core.converters.ConverterUtils.*;
 
 public class FeatureSelection {
-	protected static void useLowLevel(Instances data) throws Exception {
+	public int[] useLowLevel(Instances data, int numAttr) throws Exception {
 		System.out.println("Analyzing attributes");
 		AttributeSelection attrSel = new AttributeSelection();
 		InfoGainAttributeEval eval = new InfoGainAttributeEval();
@@ -14,16 +14,18 @@ public class FeatureSelection {
 		attrSel.setSearch(rnkr);
 		attrSel.setRanking(true);
 		attrSel.SelectAttributes(data);
-		int[] indices = attrSel.selectedAttributes();
-		System.out.println("selected attribute indices:" + Utils.arrayToString(indices));
-		System.out.println("selected attributes:");
-		for(int i : indices) {
-			System.out.println(data.attribute(i));
+		int[] rankedIndices = attrSel.selectedAttributes();
+		int[] selectedIndices = new int[numAttr + 1];
+		for(int i = 0; i < numAttr; i++) {
+			selectedIndices[i] = rankedIndices[i];
 		}
+		selectedIndices[numAttr] = data.classIndex();
+		return selectedIndices;
 	}
-	  
+	
 	public static void main(String[] args) throws Exception {
 		// load data
+		FeatureSelection ftrSelection = new FeatureSelection();
 		System.out.println("Loading data");
 		DataSource source = new DataSource("data/train_categoryFixed.arff");
 		Instances data = source.getDataSet();
@@ -31,6 +33,11 @@ public class FeatureSelection {
 			data.setClassIndex(data.numAttributes() - 1);
 		}
 
-		useLowLevel(data);
+		int[] indices = ftrSelection.useLowLevel(data, 10);
+		System.out.println("selected attribute indices:" + Utils.arrayToString(indices));
+		System.out.println("selected attributes:");
+		for(int i : indices) {
+			System.out.println(data.attribute(i));
+		}
 	}
 }
