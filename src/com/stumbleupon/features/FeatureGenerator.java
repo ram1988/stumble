@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import com.stumbleupon.reader.DBAccess;
 
@@ -88,6 +89,25 @@ public abstract class FeatureGenerator {
 		return list;
 	}
 	
+	//if isTrainWithin is true, 75% of training dataset will be for training and remaining 25% for testing
+		public static List<Map<String, Object>> getCompetitionFeaturesMap(boolean isTrain,boolean isTrainWithin)  {
+			DBAccess db = new DBAccess();
+			List<Map<String, Object>> list = null;
+			
+			if(isTrainWithin && isTrain) {
+				list = db.getDataMaps("train");
+				list = list.subList(0, (int)(0.75*list.size()) );
+			} 
+			else if(isTrainWithin && !isTrain)  {
+				list = db.getDataMaps("train");
+				list = list.subList((int)(0.75*list.size()), list.size() );
+			} else { 
+				list = db.getDataMaps(isTrain?"train":"test");
+			}
+			
+			return list;
+		}
+	
 	public String formatStringToJSON(String json_str) {
 		
 		json_str = json_str.substring(1, json_str.length()-1);
@@ -120,10 +140,19 @@ public abstract class FeatureGenerator {
 		
 		//Preparing the feature vectors
 		FastVector featureVectors = new FastVector();
-		
+		List<Object> obj = features.get(0);
+		int idx = 0;
 		for(String attrib:subAttribs) {
 			//System.out.println("Attrib-->"+attrib);
-			featureVectors.addElement(new Attribute(attrib));
+			Object str = obj.get(idx);
+			if(str instanceof Double || str instanceof Integer ) {
+				featureVectors.addElement(new Attribute(attrib));
+			} 
+			else if(str instanceof String) {
+				featureVectors.addElement(new Attribute(attrib,(FastVector)null));
+			}
+			
+			idx++;
 		}
 		
 		FastVector classVector = new FastVector(2);
@@ -142,14 +171,18 @@ public abstract class FeatureGenerator {
 		//Forming Weka Instances
 		for(List<Object> list:features) {
 			Instance feat = new Instance(attributeNames.length);
-			int idx = 0;
+			System.out.println("length-->"+attributeNames.length);
+			idx = 0;
 			for(Object str:list) {
-				//System.out.println(idx+".) Attrib-->"+attributeNames[idx]);
+				System.out.println(idx);
 				if(str instanceof Double) {
 					feat.setValue((Attribute)featureVectors.elementAt(idx),(Double)str);
 				} 
 				else if(str instanceof String) {
 					feat.setValue((Attribute)featureVectors.elementAt(idx),str.toString());
+				} 
+				else if(str instanceof Integer) {
+					feat.setValue((Attribute)featureVectors.elementAt(idx),(Integer)str);
 				}
 				idx++;
 			}

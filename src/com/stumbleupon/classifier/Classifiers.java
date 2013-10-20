@@ -65,6 +65,7 @@ public class Classifiers {
 				System.out.println("classifier-->"+bayesClassifier);
 				System.out.println("testData-->"+testData.numInstances());
 				System.out.println("test data print over");
+				
 						
 				result = new EvalResult();
 				//Evaluation on trainingSet

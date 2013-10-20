@@ -67,7 +67,7 @@ public class DBAccess {
 		DBAccess dbaccess = new DBAccess();
 		List<Map<String, Object>> data = dbaccess.getDataMaps("train");
 		System.out.println(data.size());
-		System.out.println(data.get(5).get("boilerplate"));
+		System.out.println(data.get(5).get("class"));
 		System.out.println(data.get(17).get("alchemy_category"));
 		
 	}

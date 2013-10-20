@@ -23,7 +23,7 @@ import com.stumbleupon.reader.DBAccess;
 
 public class ProportionFeatures extends FeatureGenerator {
 	
-	private List<Object[]> list;
+	private List<Map<String, Object>> list;
 	private List<List<String>> tokenized;
 	private Map<String,Integer> evergreenMap;
 	private Map<String,Integer> ephimeralMap;
@@ -36,12 +36,12 @@ public class ProportionFeatures extends FeatureGenerator {
 		//1-Training data,0-Test Data
 		if(train_or_test == 1) {
 			
-			for(Object[] str:list) {
+			for(Map<String, Object> str:list) {
 				//JSON representation 
 				String processedString = null;
 				JSONObject jsonObj;
 				try {
-					String json_str = formatStringToJSON(str[2].toString());
+					String json_str = formatStringToJSON(str.get("boilerplate").toString());
 					jsonObj = new JSONObject(json_str);
 					processedString = (String)jsonObj.get("body").toString();
 				} catch (JSONException e) {
@@ -73,12 +73,12 @@ public class ProportionFeatures extends FeatureGenerator {
 			}
 		} else {
 			tokenized.clear();
-			for(Object[] str:list) { 
+			for(Map<String, Object> str:list) { 
 				//JSON representation 
 				String processedString = null;
 				JSONObject jsonObj;
 				try {					
-					String json_str = formatStringToJSON(str[2].toString());
+					String json_str = formatStringToJSON(str.get("boilerplate").toString());
 					jsonObj = new JSONObject(json_str);
 					processedString = (String)jsonObj.get("body").toString();
 				} catch (JSONException e) {
@@ -112,8 +112,8 @@ public class ProportionFeatures extends FeatureGenerator {
 		Map<String,Integer> wordMap = new TreeMap<String,Integer>();
 		int idx = 0;
 		//System.out.println("List Size:"+list.size());
-		for(Object[] str:list) {
-			if(label.equals(str[str.length-1].toString())) {
+		for(Map<String, Object> str:list) {
+			if(label.equals(str.get("label").toString())) {
 				List<String> tok = tokenized.get(idx);
 				for(String s:tok) {
 					//System.out.println((s.equals("2015,")?"------------EXISTS":""));
@@ -137,7 +137,7 @@ public class ProportionFeatures extends FeatureGenerator {
 		/*CSVReader obj = new CSVReader("data/train.tsv","\t");
 		list = obj.readCSV();
 		*/
-		list = getCompetitionFeatures(true,true);
+		list = getCompetitionFeaturesMap(true,false);
 				
 		preprocessData(1);
 		
@@ -177,39 +177,17 @@ public class ProportionFeatures extends FeatureGenerator {
 			
 			int total = set_toks.size();
 			List<Object> features = new ArrayList<Object>();
-			Object[] item = list.get(idx);
-			String label = item[item.length-1].toString();
+			Map<String, Object> item = list.get(idx);
+			String label = item.get("label").toString();
 			
-			if(total!=0) {				
+			if(total!=0) {
 				features.add( new Double(((float)ever/(float)total)) );//Evergreen terms proportion
 				features.add( new Double(((float)ephi/(float)total)) );//Ephimeral terms proportion
 			} else {
-				//List<String> features = new ArrayList<String>();
-								
-				//String[] item = list.get(idx);
-				//String label = item[item.length-1];
-				
-			
-				/* if(label.equals("e")) {
-					features.add("100.0");
-					features.add("0");
-				} else {
-					features.add("0");
-					features.add("100.0");
-				}*/
 				features.add(0.0);
-				features.add(0.0);
-				
+				features.add(0.0);	
 			}
-			/*features.add(new Double(item[5].toString())); //avglinksize
-			features.add(new Double(item[13].toString())); //frameTagRatio
-			features.add(new Double(item[15].toString()));//html_ratio
-			features.add(new Double(item[16].toString()));//image_ratio
-			features.add(new Double(item[19].toString()));//linkwordscore
-			features.add(new Double(item[22].toString()));//numberOfLinks
-			features.add(new Double(item[23].toString()));//numwords_in_url
-			features.add(new Double(item[25].toString()));//spelling_errors_ratio
-			*/
+		
 			features.add(label);//ClassLabel
 			
 			featureList.add(features);
@@ -226,13 +204,12 @@ public class ProportionFeatures extends FeatureGenerator {
 		/*CSVReader obj = new CSVReader("data/test.tsv","\t");
 		list = obj.readCSV();
 		*/
-		list = getCompetitionFeatures(false,true);
+		list = getCompetitionFeaturesMap(false,false);
 				
 		preprocessData(0);
 		
 		List<List<Object>> featureList = new ArrayList<List<Object>>();
 		
-		int idx = 0;
 		Set<String> set_toks = new TreeSet<String>();
 		for(List<String> toks:tokenized) {
 			//System.out.println(str[1]);
@@ -265,32 +242,18 @@ public class ProportionFeatures extends FeatureGenerator {
 			
 			int total = set_toks.size();
 			List<Object> features = new ArrayList<Object>();
-			Object[] item = list.get(idx);
 			
-			if(total!=0) {				
+			if(total!=0) {	
 				features.add( new Double(((float)ever/(float)total)) );//Evergreen terms proportion
 				features.add( new Double(((float)ephi/(float)total)) );//Ephimeral terms proportion
 			} else {
-				//List<String> features = new ArrayList<String>();
-								
-				//String[] item = list.get(idx);
-				//String label = item[item.length-1];
 				features.add(0.0);
 				features.add(0.0);	
 			}
-			/*features.add(new Double(item[5].toString())); //avglinksize
-			features.add(new Double(item[13].toString())); //frameTagRatio
-			features.add(new Double(item[15].toString()));//html_ratio
-			features.add(new Double(item[16].toString()));//image_ratio
-			features.add(new Double(item[19].toString()));//linkwordscore
-			features.add(new Double(item[22].toString()));//numberOfLinks
-			features.add(new Double(item[23].toString()));//numwords_in_url
-			features.add(new Double(item[25].toString()));//spelling_errors_ratio
-			*/
+			
 			features.add("?");//ClassLabel
 			
 			featureList.add(features);
-			idx++;
 		}
 		
 		return featureList;
@@ -406,20 +369,20 @@ public class ProportionFeatures extends FeatureGenerator {
 		}
 		
 		BufferedWriter bw = new BufferedWriter(fw);
-		List<Object[]> list = getCompetitionFeatures(false,true);
+		List<Map<String, Object>> list = getCompetitionFeaturesMap(false,false);
 				
 		int trueCt = 0, falseCt = 0;
 		try {
 			int i = 0;
 			for(String predicted:result.getClassLabel()) {
-				Object[] item = list.get(i);
-				String original = item[item.length-1].toString();
+				Map<String, Object> item = list.get(i);
+				String original = item.get("label").toString();
 				if(predicted.equals(original))  
 					trueCt++;
 				else 
 					falseCt++;
 				
-				bw.write(predicted+"=="+item[item.length-1].toString()+"\n");
+				bw.write(item.get("urlid").toString()+","+predicted+"\n");
 				i++;
 			}
 		} catch (IOException e) {
