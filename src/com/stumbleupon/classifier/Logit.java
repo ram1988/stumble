@@ -33,7 +33,7 @@ public class Logit {
 	public void selectAttributes(int numAttr)  throws Exception {
 		int[] indices = new int[numAttr + 2]; //+1 is for the class attribute; another +1 for URLID
 		FeatureSelection ftrSelection = new FeatureSelection();
-		indices = ftrSelection.useLowLevel(trainData, numAttr);
+		indices = ftrSelection.getSelectedIndices(trainData, numAttr);
 		int[] toRetain = indices;
 		Remove remove = new Remove();
 		remove.setInvertSelection(true);

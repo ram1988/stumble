@@ -51,32 +51,24 @@ public class DBAccess {
 		return recordList;
 	}
 	
-	public static void main(String ...a) {
-		
-		MongoClient client = null;
-		
-		try {
-			client = new MongoClient( "localhost" , 27017 );
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} 
-
-		DB db = client.getDB( "kdd" );
-		DBCollection table = db.getCollection("train_proportions");
-		 
-		BasicDBObject searchQuery = new BasicDBObject();
-		searchQuery.put("class", "e");
-	 
+	public List<Map<String, Object>> getDataMaps(String table_name) {
+		DBCollection table = db.getCollection(table_name);
 		DBCursor cursor = table.find();
-	 
-		//System.out.println(cursor.length());
+		List<Map<String, Object>> tblData = new ArrayList<Map<String,Object>>();
 		while (cursor.hasNext()) {
-			//DBObject obj = cursor.next();
-			Map rec = cursor.next().toMap();
+			Map<String, Object> rec = cursor.next().toMap();
 			rec.remove("_id");
-			Object[] rec1 = (Object[]) rec.values().toArray(new Object[0]);
-			System.out.println(rec1);
+			tblData.add(rec);
 		}
+		return tblData;
+	}
+	
+	public static void main(String ...a) {
+		DBAccess dbaccess = new DBAccess();
+		List<Map<String, Object>> data = dbaccess.getDataMaps("train");
+		System.out.println(data.size());
+		System.out.println(data.get(5).get("boilerplate"));
+		System.out.println(data.get(17).get("alchemy_category"));
+		
 	}
 }
