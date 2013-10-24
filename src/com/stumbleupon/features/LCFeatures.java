@@ -19,6 +19,7 @@ import com.stumbleupon.classifier.BuildModelException;
 import com.stumbleupon.classifier.Classifiers;
 import com.stumbleupon.classifier.EvalResult;
 import com.stumbleupon.classifier.EvaluationException;
+import com.stumbleupon.classifier.WekaClassifier;
 import com.stumbleupon.reader.CSVReader;
 import com.stumbleupon.reader.DBAccess;
 
@@ -141,7 +142,7 @@ public class LCFeatures extends FeatureGenerator {
 		/*CSVReader obj = new CSVReader("data/train.tsv","\t");
 		list = obj.readCSV();
 		 */
-		list = getCompetitionFeaturesMap(true,true);
+		list = getCompetitionFeaturesMap(true,false);
 
 		preprocessData(1);
 
@@ -225,7 +226,7 @@ public class LCFeatures extends FeatureGenerator {
 		/*CSVReader obj = new CSVReader("data/test.tsv","\t");
 		list = obj.readCSV();
 		 */
-		list = getCompetitionFeaturesMap(false,true);
+		list = getCompetitionFeaturesMap(false,false);
 
 		preprocessData(0);
 
@@ -306,7 +307,7 @@ public class LCFeatures extends FeatureGenerator {
 
 		LCFeatures feat = new LCFeatures();
 
-		String classifier = "svm";
+		String classifier = "ann";
 
 		//Generating Train Features
 		List<List<Object>> feats = feat.generateFeaturesFromTrainData();
@@ -346,8 +347,9 @@ public class LCFeatures extends FeatureGenerator {
 
 		//Programmatic Classification 
 		//Build Model
+		Classifiers classifiers = new WekaClassifier(classifier);
 		try {
-			Classifiers.trainClassifier(classifier, feats,attribNames);
+			classifiers.trainClassifier(feats,attribNames);
 		} catch (BuildModelException e2) {
 			// TODO Auto-generated catch block
 			e2.printStackTrace();
@@ -394,11 +396,12 @@ public class LCFeatures extends FeatureGenerator {
 		//Test Model
 		EvalResult result = null;
 		try {
-			result = Classifiers.testClassifier(feats, attribNames);
+			result = classifiers.testClassifier(feats, attribNames);
 		} catch (EvaluationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+			
 
 
 		//System.out.println("Predicted Class Label--->"+result.getClassLabel());
@@ -417,14 +420,14 @@ public class LCFeatures extends FeatureGenerator {
 		}
 
 		bw = new BufferedWriter(fw);
-		List<Map<String, Object>> list = getCompetitionFeaturesMap(false,true);
+		List<Map<String, Object>> list = getCompetitionFeaturesMap(false,false);
 
 		int trueCt = 0, falseCt = 0;
 		try {
 			int i = 0;
 			for(String predicted:result.getClassLabel()) {
 				Map<String, Object> item = list.get(i);
-				String original = item.get("label").toString();
+				String original = item.get("label")!=null?item.get("label").toString():"";
 				if(predicted.equals(original))  
 					trueCt++;
 				else 

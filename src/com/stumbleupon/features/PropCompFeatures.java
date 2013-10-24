@@ -18,24 +18,25 @@ import com.stumbleupon.classifier.BuildModelException;
 import com.stumbleupon.classifier.Classifiers;
 import com.stumbleupon.classifier.EvalResult;
 import com.stumbleupon.classifier.EvaluationException;
+import com.stumbleupon.classifier.WekaClassifier;
 import com.stumbleupon.reader.CSVReader;
 import com.stumbleupon.reader.DBAccess;
 
 public class PropCompFeatures extends FeatureGenerator {
-	
+
 	private List<Map<String, Object>> list;
 	private List<List<String>> tokenized;
 	private Map<String,Integer> evergreenMap;
 	private Map<String,Integer> ephimeralMap;
-	
-private void preprocessData(int train_or_test) {
-		
+
+	private void preprocessData(int train_or_test) {
+
 		tokenized = new ArrayList<List<String>>();
 		String unwanted = "^[0-9]+[^0-9a-z]$|^[a-z]$|^[^0-9a-z]|^[0-9]*$";
-		
+
 		//1-Training data,0-Test Data
 		if(train_or_test == 1) {
-			
+
 			for(Map<String, Object> str:list) {
 				//JSON representation 
 				String processedString = null;
@@ -48,25 +49,25 @@ private void preprocessData(int train_or_test) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				
+
 				//str[str.length-1] = str[str.length-1].toString().equals("1")?"e":"n";
 				String[] tok = processedString.split(" ");
-				
+
 				List<String> tokens = new ArrayList<String>();
 				for(String s:tok) {
-					 //lower case
-					 s = s.toLowerCase();
-					 
-					 s = s.replaceAll("[^0-9a-z]","");
-					 
-					 //Number or single character removal  and perform Stop word removal
-					 if(s.matches(unwanted) || isStopWord(s)) {
-						 continue;
-					 }
-					 
+					//lower case
+					s = s.toLowerCase();
+
+					s = s.replaceAll("[^0-9a-z]","");
+
+					//Number or single character removal  and perform Stop word removal
+					if(s.matches(unwanted) || isStopWord(s)) {
+						continue;
+					}
+
 					//perform stemming
 					s = stemWords(s);
-					
+
 					tokens.add(s);
 				}
 				tokenized.add(tokens);
@@ -85,20 +86,20 @@ private void preprocessData(int train_or_test) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				
+
 				String[] tok = processedString.split(" ");
-				
+
 				List<String> tokens = new ArrayList<String>();
 				for(String s:tok) {
-					 //lower case
-					 s = s.toLowerCase();
-					 
-					 s = s.replaceAll("[^0-9a-z]","");
-					 
-					 //Number or single character removal  and perform Stop word removal
-					 if(s.matches(unwanted) || isStopWord(s)) {
-						 continue;
-					 }				
+					//lower case
+					s = s.toLowerCase();
+
+					s = s.replaceAll("[^0-9a-z]","");
+
+					//Number or single character removal  and perform Stop word removal
+					if(s.matches(unwanted) || isStopWord(s)) {
+						continue;
+					}				
 					//perform stemming
 					s = stemWords(s);
 					tokens.add(s);
@@ -107,60 +108,60 @@ private void preprocessData(int train_or_test) {
 			}
 		}
 	}
-	
-private Map<String,Integer> getWordMap(String label) {
-	Map<String,Integer> wordMap = new TreeMap<String,Integer>();
-	int idx = 0;
-	//System.out.println("List Size:"+list.size());
-	for(Map<String, Object> str:list) {
-		if(label.equals(str.get("label").toString())) {
-			List<String> tok = tokenized.get(idx);
-			for(String s:tok) {
-				//System.out.println((s.equals("2015,")?"------------EXISTS":""));
-				//if term exists, increment the term freq. by one 
-				if(wordMap.containsKey(s)) {
-					wordMap.put(s,wordMap.get(s)+1);
-				} else {
-					wordMap.put(s, 1);
+
+	private Map<String,Integer> getWordMap(String label) {
+		Map<String,Integer> wordMap = new TreeMap<String,Integer>();
+		int idx = 0;
+		//System.out.println("List Size:"+list.size());
+		for(Map<String, Object> str:list) {
+			if(label.equals(str.get("label").toString())) {
+				List<String> tok = tokenized.get(idx);
+				for(String s:tok) {
+					//System.out.println((s.equals("2015,")?"------------EXISTS":""));
+					//if term exists, increment the term freq. by one 
+					if(wordMap.containsKey(s)) {
+						wordMap.put(s,wordMap.get(s)+1);
+					} else {
+						wordMap.put(s, 1);
+					}
 				}
 			}
+			idx++;
 		}
-		idx++;
+		//System.out.println("Map Size:"+wordMap.size());
+		return wordMap;
 	}
-	//System.out.println("Map Size:"+wordMap.size());
-	return wordMap;
-}
-	
-	
+
+
 	@Override
 	public List<List<Object>> generateFeaturesFromTrainData() {
 		/*CSVReader obj = new CSVReader("data/train.tsv","\t");
 		list = obj.readCSV();
-		*/
+		 */
 		list = getCompetitionFeaturesMap(true,false);
-				
+
 		preprocessData(1);
-		
+
 		evergreenMap = getWordMap("1");
 		ephimeralMap = getWordMap("0");
-		
+
 		List<List<Object>> featureList = new ArrayList<List<Object>>();
-		
+
 		int idx = 0;
 		Set<String> set_toks = new TreeSet<String>();
 		for(List<String> toks:tokenized) {
 			//System.out.println(str[1]);
 			int ever = 0, ephi = 0;
-			
+
 			//Making unique list of terms as Set
 			set_toks.clear();
 			set_toks.addAll(toks);
-			
+
 			for(String s:set_toks) {
 				//System.out.println(s);
 				int ev_ct = (evergreenMap.get(s)!=null)?evergreenMap.get(s):0;
 				int ep_ct = (ephimeralMap.get(s)!=null)?ephimeralMap.get(s):0;
-				
+
 				/*
 				 * If term occurence is more in evergreen, remove from ephimeral.. otherwise..
 				 * So, exclusive evergreen and ephimeral maps are created
@@ -174,22 +175,22 @@ private Map<String,Integer> getWordMap(String label) {
 					ephi++;
 				}
 			}
-			
+
 			int total = set_toks.size();
 			List<Object> features = new ArrayList<Object>();
 			Map<String, Object> item = list.get(idx);
 			String label = item.get("label").toString();
-			
+
 			if(total!=0) {				
 				features.add( new Double(((float)ever/(float)total)) );//Evergreen terms proportion
 				features.add( new Double(((float)ephi/(float)total)) );//Ephimeral terms proportion
 			} else {
 				//List<String> features = new ArrayList<String>();
-								
+
 				//String[] item = list.get(idx);
 				//String label = item[item.length-1];
-				
-			
+
+
 				/* if(label.equals("e")) {
 					features.add("100.0");
 					features.add("0");
@@ -199,7 +200,7 @@ private Map<String,Integer> getWordMap(String label) {
 				}*/
 				features.add(0.0);
 				features.add(0.0);
-				
+
 			}
 			/*features.add(new Double(item[5].toString())); //avglinksize
 			features.add(new Double(item[13].toString())); //frameTagRatio
@@ -209,44 +210,44 @@ private Map<String,Integer> getWordMap(String label) {
 			features.add(new Double(item[22].toString()));//numberOfLinks
 			features.add(new Double(item[23].toString()));//numwords_in_url
 			features.add(new Double(item[25].toString()));//spelling_errors_ratio
-			*/
+			 */
 			features.add(label);//ClassLabel
-			
+
 			featureList.add(features);
 			idx++;
 		}
-		
+
 		return featureList;
 	}
-	
-	
+
+
 
 	@Override
 	public List<List<Object>> generateFeaturesFromTestData() {
 		/*CSVReader obj = new CSVReader("data/test.tsv","\t");
 		list = obj.readCSV();
-		*/
+		 */
 		list = getCompetitionFeaturesMap(false,false);
-				
+
 		preprocessData(0);
-		
+
 		List<List<Object>> featureList = new ArrayList<List<Object>>();
-		
+
 		int idx = 0;
 		Set<String> set_toks = new TreeSet<String>();
 		for(List<String> toks:tokenized) {
 			//System.out.println(str[1]);
 			int ever = 0, ephi = 0;
-			
+
 			//Making unique list of terms as Set
 			set_toks.clear();
 			set_toks.addAll(toks);
-			
+
 			for(String s:set_toks) {
 				//System.out.println(s);
 				int ev_ct = (evergreenMap.get(s)!=null)?evergreenMap.get(s):0;
 				int ep_ct = (ephimeralMap.get(s)!=null)?ephimeralMap.get(s):0;
-				
+
 				/*
 				 * If term occurence is more in evergreen, remove from ephimeral.. otherwise..
 				 * So, exclusive evergreen and ephimeral maps are created
@@ -262,17 +263,17 @@ private Map<String,Integer> getWordMap(String label) {
 					ephi++;
 				}
 			}
-			
+
 			int total = set_toks.size();
 			List<Object> features = new ArrayList<Object>();
 			Map<String,Object> item = list.get(idx);
-			
+
 			if(total!=0) {				
 				features.add( new Double(((float)ever/(float)total)) );//Evergreen terms proportion
 				features.add( new Double(((float)ephi/(float)total)) );//Ephimeral terms proportion
 			} else {
 				//List<String> features = new ArrayList<String>();
-								
+
 				//String[] item = list.get(idx);
 				//String label = item[item.length-1];
 				features.add(0.0);
@@ -286,22 +287,22 @@ private Map<String,Integer> getWordMap(String label) {
 			features.add(new Double(item[22].toString()));//numberOfLinks
 			features.add(new Double(item[23].toString()));//numwords_in_url
 			features.add(new Double(item[25].toString()));//spelling_errors_ratio
-			*/
+			 */
 			features.add("?");//ClassLabel
-			
+
 			featureList.add(features);
 			idx++;
 		}
-		
+
 		return featureList;
 	}
-	
+
 	public static void main(String[] args) {
-		
+
 		String[] attribNames = {"evergreen","ephimeral","class"};
-		
+
 		PropCompFeatures feat = new PropCompFeatures();
-		
+
 		//Generating Train Features
 		List<List<Object>> feats = feat.generateFeaturesFromTrainData();
 		/*FileWriter fw = null;
@@ -311,9 +312,9 @@ private Map<String,Integer> getWordMap(String label) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		
+
 		BufferedWriter bw = new BufferedWriter(fw);
-		
+
 		try {
 			int len = feats.get(0).size();
 			bw.write("evergreen,ephimeral,avglinksize,frameTagRatio,html_ratio,image_ratio,linkwordscore,numberOfLinks,numwords_in_url,spelling_errors_ratio,class\n");
@@ -334,18 +335,19 @@ private Map<String,Integer> getWordMap(String label) {
 				e.printStackTrace();
 			}
 		}*/
-	
+
 		//Programmatic Classification 
 		//Build Model
+		//Build Model
+		Classifiers classifiers = new WekaClassifier("bayes");
 		try {
-			//Classifiers.trainClassifier("svm", feats,attribNames);
-			Classifiers.trainClassifier("bayes", feats,attribNames);
+			classifiers.trainClassifier(feats,attribNames);
 		} catch (BuildModelException e2) {
 			// TODO Auto-generated catch block
 			e2.printStackTrace();
 		}
-		
-		
+
+
 		//Generating Test Features
 		feats = feat.generateFeaturesFromTestData();
 		/*fw = null;
@@ -355,9 +357,9 @@ private Map<String,Integer> getWordMap(String label) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		
+
 		bw = new BufferedWriter(fw);
-		
+
 		try {
 			int len = feats.get(0).size();
 			bw.write("evergreen,ephimeral,avglinksize,frameTagRatio,html_ratio,image_ratio,linkwordscore,numberOfLinks,numwords_in_url,spelling_errors_ratio,class\n");
@@ -378,24 +380,24 @@ private Map<String,Integer> getWordMap(String label) {
 				e.printStackTrace();
 			}
 		}*/
-		
+
 		//Test Model
 		EvalResult result = null;
 		try {
-			result = Classifiers.testClassifier(feats, attribNames);
+			result = classifiers.testClassifier(feats, attribNames);
 		} catch (EvaluationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-						  
-		
+
+
 		//System.out.println("Predicted Class Label--->"+result.getClassLabel());
 		System.out.println("AUC Metric--->"+result.getAUC());
 		System.out.println("Precision--->"+result.getPrecision());
 		System.out.println("Recall--->"+result.getRecall());
 		System.out.println("F-Measure--->"+result.getFmeasure());
-		
-		
+
+
 		FileWriter fw = null;
 		try {
 			fw = new FileWriter("test_labels.txt");
@@ -403,10 +405,10 @@ private Map<String,Integer> getWordMap(String label) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		
+
 		BufferedWriter bw = new BufferedWriter(fw);
 		List<Map<String, Object>> list = getCompetitionFeaturesMap(false,true);
-				
+
 		int trueCt = 0, falseCt = 0;
 		try {
 			int i = 0;
@@ -417,7 +419,7 @@ private Map<String,Integer> getWordMap(String label) {
 					trueCt++;
 				else 
 					falseCt++;
-				
+
 				//bw.write(predicted+"=="+item[item.length-1].toString()+"\n");
 				i++;
 			}

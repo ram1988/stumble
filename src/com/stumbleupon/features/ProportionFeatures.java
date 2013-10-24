@@ -18,6 +18,7 @@ import com.stumbleupon.classifier.BuildModelException;
 import com.stumbleupon.classifier.Classifiers;
 import com.stumbleupon.classifier.EvalResult;
 import com.stumbleupon.classifier.EvaluationException;
+import com.stumbleupon.classifier.WekaClassifier;
 import com.stumbleupon.reader.CSVReader;
 import com.stumbleupon.reader.DBAccess;
 
@@ -302,8 +303,9 @@ public class ProportionFeatures extends FeatureGenerator {
 	
 		//Programmatic Classification 
 		//Build Model
+		Classifiers classifiers = new WekaClassifier(classifier);
 		try {
-			Classifiers.trainClassifier(classifier, feats,attribNames);
+			classifiers.trainClassifier(feats,attribNames);
 		} catch (BuildModelException e2) {
 			// TODO Auto-generated catch block
 			e2.printStackTrace();
@@ -346,7 +348,7 @@ public class ProportionFeatures extends FeatureGenerator {
 		//Test Model
 		EvalResult result = null;
 		try {
-			result = Classifiers.testClassifier(feats, attribNames);
+			result = classifiers.testClassifier(feats, attribNames);
 		} catch (EvaluationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
