@@ -202,15 +202,10 @@ public class PropCompFeatures extends FeatureGenerator {
 				features.add(0.0);
 
 			}
-			/*features.add(new Double(item[5].toString())); //avglinksize
-			features.add(new Double(item[13].toString())); //frameTagRatio
-			features.add(new Double(item[15].toString()));//html_ratio
-			features.add(new Double(item[16].toString()));//image_ratio
-			features.add(new Double(item[19].toString()));//linkwordscore
-			features.add(new Double(item[22].toString()));//numberOfLinks
-			features.add(new Double(item[23].toString()));//numwords_in_url
-			features.add(new Double(item[25].toString()));//spelling_errors_ratio
-			 */
+			features.add(new Double(!item.get("is_news").toString().equals("?")?item.get("is_news").toString() :"0.5")); //is_news
+			features.add(new Double(!item.get("news_front_page").toString().equals("?")?item.get("news_front_page").toString() :"0.5")); //news_front_page
+			
+			
 			features.add(label);//ClassLabel
 
 			featureList.add(features);
@@ -232,7 +227,7 @@ public class PropCompFeatures extends FeatureGenerator {
 		preprocessData(0);
 
 		List<List<Object>> featureList = new ArrayList<List<Object>>();
-
+		
 		int idx = 0;
 		Set<String> set_toks = new TreeSet<String>();
 		for(List<String> toks:tokenized) {
@@ -279,15 +274,9 @@ public class PropCompFeatures extends FeatureGenerator {
 				features.add(0.0);
 				features.add(0.0);	
 			}
-			/*features.add(new Double(item[5].toString())); //avglinksize
-			features.add(new Double(item[13].toString())); //frameTagRatio
-			features.add(new Double(item[15].toString()));//html_ratio
-			features.add(new Double(item[16].toString()));//image_ratio
-			features.add(new Double(item[19].toString()));//linkwordscore
-			features.add(new Double(item[22].toString()));//numberOfLinks
-			features.add(new Double(item[23].toString()));//numwords_in_url
-			features.add(new Double(item[25].toString()));//spelling_errors_ratio
-			 */
+			features.add(new Double(!item.get("is_news").toString().equals("?")?item.get("is_news").toString() :"0.5")); //is_news
+			features.add(new Double(!item.get("news_front_page").toString().equals("?")?item.get("news_front_page").toString() :"0.5")); //news_front_page
+				
 			features.add("?");//ClassLabel
 
 			featureList.add(features);
@@ -299,9 +288,10 @@ public class PropCompFeatures extends FeatureGenerator {
 
 	public static void main(String[] args) {
 
-		String[] attribNames = {"evergreen","ephimeral","class"};
+		String[] attribNames = {"evergreen","ephimeral","isnews","isnewsfront","class"};
 
 		PropCompFeatures feat = new PropCompFeatures();
+		String classifier = "ann";
 
 		//Generating Train Features
 		List<List<Object>> feats = feat.generateFeaturesFromTrainData();
@@ -339,7 +329,7 @@ public class PropCompFeatures extends FeatureGenerator {
 		//Programmatic Classification 
 		//Build Model
 		//Build Model
-		Classifiers classifiers = new WekaClassifier("bayes");
+		Classifiers classifiers = new WekaClassifier(classifier);
 		try {
 			classifiers.trainClassifier(feats,attribNames);
 		} catch (BuildModelException e2) {
@@ -384,7 +374,7 @@ public class PropCompFeatures extends FeatureGenerator {
 		//Test Model
 		EvalResult result = null;
 		try {
-			result = classifiers.testClassifier(feats, attribNames);
+			result = classifiers.testClassifier(feats);
 		} catch (EvaluationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -398,37 +388,38 @@ public class PropCompFeatures extends FeatureGenerator {
 		System.out.println("F-Measure--->"+result.getFmeasure());
 
 
+
 		FileWriter fw = null;
 		try {
-			fw = new FileWriter("test_labels.txt");
+			fw = new FileWriter("test_labels_"+classifier+".txt");
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-
+		
 		BufferedWriter bw = new BufferedWriter(fw);
-		List<Map<String, Object>> list = getCompetitionFeaturesMap(false,true);
-
+		List<Map<String, Object>> list = getCompetitionFeaturesMap(false,false);
+				
 		int trueCt = 0, falseCt = 0;
 		try {
 			int i = 0;
 			for(String predicted:result.getClassLabel()) {
 				Map<String, Object> item = list.get(i);
-				String original = item.get("label").toString();
-				if(predicted.equals(original))  
+				Object original = item.get("label");
+				if(original!=null && predicted.equals(original.toString()) ) 
 					trueCt++;
 				else 
 					falseCt++;
-
-				//bw.write(predicted+"=="+item[item.length-1].toString()+"\n");
+				
+				bw.write(item.get("urlid").toString()+","+predicted+"\n");
 				i++;
 			}
-		} catch (Exception e) {
+		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
 			try {
-				bw.write("Truely classified3433-->"+trueCt+"------Falsely classified--->"+falseCt);
+				bw.write("Truely classifiedsvm-->"+trueCt+"------Falsely classified--->"+falseCt);
 				bw.close();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
