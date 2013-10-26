@@ -63,6 +63,18 @@ public class DBAccess {
 		return tblData;
 	}
 	
+	public List<Object> getDataMaps(String table_name,String field) {
+		DBCollection table = db.getCollection(table_name);
+		DBCursor cursor = table.find();
+		
+		List<Object> tblData = new ArrayList<Object>();
+		while (cursor.hasNext()) {
+			Object rec = cursor.next().toMap().get(field);
+			tblData.add(rec);
+		}
+		return tblData;
+	}
+	
 	public static void main(String ...a) {
 		DBAccess dbaccess = new DBAccess();
 		List<Map<String, Object>> data = dbaccess.getDataMaps("train");
