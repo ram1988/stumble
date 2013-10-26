@@ -24,7 +24,6 @@ public class FeatureSelection {
 	}
 	
 	public String[] getSelectedAttributes(Instances data, int numAttr) throws Exception {
-		System.out.println("Analyzing attributes");
 		//get attribute names
 		String[] attributeNames = new String[data.numAttributes()];
 		for(int i = 0; i < data.numAttributes(); i++) {

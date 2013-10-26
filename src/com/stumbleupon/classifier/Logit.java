@@ -13,9 +13,10 @@ public class Logit {
 	private Instances testData;
 	private DataSource trainSource;
 	private Logistic logit;
+	
 	public Logit()  throws Exception {
 		//get data
-		trainSource = new DataSource("data/train_categoryFixed.arff");
+		trainSource = new DataSource("data/train_categoryFixed2.arff");
 		trainData = trainSource.getDataSet();
 		
 		// randomize the data

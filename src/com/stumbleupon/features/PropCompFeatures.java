@@ -12,7 +12,11 @@ import java.util.TreeSet;
 
 import org.json.*;
 
+import weka.classifiers.functions.Logistic;
 import weka.core.Instances;
+import weka.core.converters.ConverterUtils.DataSource;
+import weka.filters.Filter;
+import weka.filters.unsupervised.attribute.Remove;
 
 import com.stumbleupon.classifier.BuildModelException;
 import com.stumbleupon.classifier.Classifiers;
@@ -28,6 +32,35 @@ public class PropCompFeatures extends FeatureGenerator {
 	private List<List<String>> tokenized;
 	private Map<String,Integer> evergreenMap;
 	private Map<String,Integer> ephimeralMap;
+	private Instances trainData;
+	private Instances testData;
+	private DataSource trainSource;
+	private String[] attributes;
+	public String[] attribNames;
+	
+	public PropCompFeatures() throws Exception {
+		//get data
+		trainSource = new DataSource("data/train_categoryFixed2.arff");
+		trainData = trainSource.getDataSet();
+		
+		// randomize the data
+		trainData.randomize(trainData.getRandomNumberGenerator(System.nanoTime()));
+		
+		attributes = null;
+		try {
+			FeatureSelection ftrSelection = new FeatureSelection();
+			attributes = ftrSelection.getSelectedAttributes(trainData, 5);
+		}
+		catch (Exception e) {
+			System.out.println("ERROR: Exception occured during FeatureSelection. \n" + e.getMessage());
+		}
+		attribNames = new String[8];
+		attribNames[0] = "evergreen";
+		attribNames[1] = "ephimeral";
+		for(int i = 2; i < attribNames.length; i++) {
+			attribNames[i] = attributes[i-2];
+		}
+	}
 
 	private void preprocessData(int train_or_test) {
 
@@ -138,6 +171,7 @@ public class PropCompFeatures extends FeatureGenerator {
 		/*CSVReader obj = new CSVReader("data/train.tsv","\t");
 		list = obj.readCSV();
 		 */
+			
 		list = getCompetitionFeaturesMap(true,false);
 
 		preprocessData(1);
@@ -202,11 +236,23 @@ public class PropCompFeatures extends FeatureGenerator {
 				features.add(0.0);
 
 			}
-			features.add(new Double(!item.get("is_news").toString().equals("?")?item.get("is_news").toString() :"0.5")); //is_news
-			features.add(new Double(!item.get("news_front_page").toString().equals("?")?item.get("news_front_page").toString() :"0.5")); //news_front_page
+
+			try{
+				for(String a : attributes) {
+					try {
+						features.add(new Double(item.get(a).toString())); 
+					}
+					catch (Exception e) {
+						// most likely that the attribute is Alchemy Category
+						features.add(item.get(a).toString()); 
+					}
+				}
+			}
+			catch (Exception e) {
+				System.out.println("ERROR: Exception occured during FeatureSelection. \n" + e.getMessage());
+			}
 			
-			
-			features.add(label);//ClassLabel
+			//features.add(label);//ClassLabel
 
 			featureList.add(features);
 			idx++;
@@ -218,10 +264,18 @@ public class PropCompFeatures extends FeatureGenerator {
 
 
 	@Override
-	public List<List<Object>> generateFeaturesFromTestData() {
+	public List<List<Object>> generateFeaturesFromTestData(){
 		/*CSVReader obj = new CSVReader("data/test.tsv","\t");
 		list = obj.readCSV();
 		 */
+		try {
+			FeatureSelection ftrSelection = new FeatureSelection();
+			attributes = ftrSelection.getSelectedAttributes(trainData, 5);
+		}
+		catch (Exception e) {
+			System.out.println("ERROR: Exception occured during FeatureSelection. \n" + e.getMessage());
+		}
+		
 		list = getCompetitionFeaturesMap(false,false);
 
 		preprocessData(0);
@@ -267,17 +321,26 @@ public class PropCompFeatures extends FeatureGenerator {
 				features.add( new Double(((float)ever/(float)total)) );//Evergreen terms proportion
 				features.add( new Double(((float)ephi/(float)total)) );//Ephimeral terms proportion
 			} else {
-				//List<String> features = new ArrayList<String>();
-
-				//String[] item = list.get(idx);
-				//String label = item[item.length-1];
 				features.add(0.0);
 				features.add(0.0);	
 			}
-			features.add(new Double(!item.get("is_news").toString().equals("?")?item.get("is_news").toString() :"0.5")); //is_news
-			features.add(new Double(!item.get("news_front_page").toString().equals("?")?item.get("news_front_page").toString() :"0.5")); //news_front_page
-				
-			features.add("?");//ClassLabel
+			
+			try{
+				for(String a : attributes) {
+					try {
+						features.add(new Double(item.get(a).toString())); 
+					}
+					catch (Exception e) {
+						// most likely that the attribute is Alchemy Category
+						features.add(item.get(a)); 
+					}
+				}
+			}
+			catch (Exception e1) {
+				System.out.println("ERROR: Exception occured during FeatureSelection. \n" + e1.getMessage());
+			}
+			
+			//features.add("?");//ClassLabel
 
 			featureList.add(features);
 			idx++;
@@ -286,12 +349,9 @@ public class PropCompFeatures extends FeatureGenerator {
 		return featureList;
 	}
 
-	public static void main(String[] args) {
-
-		String[] attribNames = {"evergreen","ephimeral","isnews","isnewsfront","class"};
-
+	public static void main(String[] args) throws Exception {
 		PropCompFeatures feat = new PropCompFeatures();
-		String classifier = "ann";
+		String classifier = "logit";
 
 		//Generating Train Features
 		List<List<Object>> feats = feat.generateFeaturesFromTrainData();
@@ -331,7 +391,7 @@ public class PropCompFeatures extends FeatureGenerator {
 		//Build Model
 		Classifiers classifiers = new WekaClassifier(classifier);
 		try {
-			classifiers.trainClassifier(feats,attribNames);
+			classifiers.trainClassifier(feats,feat.attribNames);
 		} catch (BuildModelException e2) {
 			// TODO Auto-generated catch block
 			e2.printStackTrace();

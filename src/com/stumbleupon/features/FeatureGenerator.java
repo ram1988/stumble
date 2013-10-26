@@ -134,6 +134,21 @@ public abstract class FeatureGenerator {
 	
 	public static Instances convertToWekaFeatures(List<List<Object>> features, String[] attributeNames,boolean isTrainPhase) {
 		
+		FastVector alchemy_catogories = new FastVector();
+		alchemy_catogories.addElement("business");
+		alchemy_catogories.addElement("recreation");
+		alchemy_catogories.addElement("health");
+		alchemy_catogories.addElement("sports");
+		alchemy_catogories.addElement("arts_entertainment");
+		alchemy_catogories.addElement("computer_internet");
+		alchemy_catogories.addElement("science_technology");
+		alchemy_catogories.addElement("culture_politics");
+		alchemy_catogories.addElement("gaming");
+		alchemy_catogories.addElement("law_crime");
+		alchemy_catogories.addElement("religion");
+		alchemy_catogories.addElement("weather");
+		alchemy_catogories.addElement("unknown");
+		
 		Instances featureSet = null;
 		
 		String[] subAttribs = Arrays.copyOfRange(attributeNames, 0, attributeNames.length-1);
@@ -143,13 +158,18 @@ public abstract class FeatureGenerator {
 		List<Object> obj = features.get(0);
 		int idx = 0;
 		for(String attrib:subAttribs) {
-			//System.out.println("Attrib-->"+attrib);
+			System.out.println("Attrib-->"+attrib);
 			Object str = obj.get(idx);
 			if(str instanceof Double || str instanceof Integer ) {
 				featureVectors.addElement(new Attribute(attrib));
 			} 
 			else if(str instanceof String) {
-				featureVectors.addElement(new Attribute(attrib,(FastVector)null));
+				if(attrib.equals("alchemy_category")) {
+					featureVectors.addElement(new Attribute(attrib,alchemy_catogories));
+				}
+				else {
+					featureVectors.addElement(new Attribute(attrib,(FastVector)null));
+				}
 			}
 			
 			idx++;
@@ -175,6 +195,7 @@ public abstract class FeatureGenerator {
 			idx = 0;
 			for(Object str:list) {
 				System.out.println(idx);
+				System.out.println(str);
 				if(str instanceof Double) {
 					feat.setValue((Attribute)featureVectors.elementAt(idx),(Double)str);
 				} 

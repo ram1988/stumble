@@ -67,7 +67,7 @@ public class WekaClassifier extends Classifiers {
 				if(attribNames.length > 10) {
 					System.out.println("Feature Selection takes place");
 					FeatureSelection ftrSelection = new FeatureSelection();
-					toRetain = ftrSelection.getSelectedIndices(trainingSet, 100);
+					toRetain = ftrSelection.getSelectedIndices(trainingSet, 5);
 					Remove remove = new Remove();
 					remove.setInvertSelection(true);
 					remove.setAttributeIndicesArray(toRetain);
