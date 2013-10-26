@@ -1,11 +1,7 @@
 package com.stumbleupon.classifier;
-import java.util.ArrayList;
-import java.util.List;
-
 import weka.classifiers.functions.Logistic;
 import weka.core.Instance;
 import weka.core.Instances;
-import weka.core.Utils;
 import weka.core.converters.ConverterUtils.DataSource;
 import weka.filters.Filter;
 import weka.filters.unsupervised.attribute.Remove;
@@ -16,10 +12,7 @@ public class Logit {
 	private Instances trainData;
 	private Instances testData;
 	private DataSource trainSource;
-	private DataSource testSource;
 	private Logistic logit;
-	private int[] URL_ids;
-	
 	public Logit()  throws Exception {
 		//get data
 		trainSource = new DataSource("data/train_categoryFixed.arff");
