@@ -184,6 +184,7 @@ public class ProportionFeatures extends FeatureGenerator {
 			if(total!=0) {
 				features.add( new Double(((float)ever/(float)total)) );//Evergreen terms proportion
 				features.add( new Double(((float)ephi/(float)total)) );//Ephimeral terms proportion
+				
 			} else {
 				features.add(0.0);
 				features.add(0.0);	
@@ -303,7 +304,7 @@ public class ProportionFeatures extends FeatureGenerator {
 	
 		//Programmatic Classification 
 		//Build Model
-		Classifiers classifiers = new WekaClassifier(classifier);
+		Classifiers classifiers = new WekaClassifier(classifier,feat);
 		try {
 			classifiers.trainClassifier(feats,attribNames);
 		} catch (BuildModelException e2) {
@@ -348,19 +349,13 @@ public class ProportionFeatures extends FeatureGenerator {
 		//Test Model
 		EvalResult result = null;
 		try {
-			result = classifiers.testClassifier(feats, attribNames);
+			result = classifiers.testClassifier(feats);
 		} catch (EvaluationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 						  
-		
-		//System.out.println("Predicted Class Label--->"+result.getClassLabel());
-		System.out.println("AUC Metric--->"+result.getAUC());
-		System.out.println("Precision--->"+result.getPrecision());
-		System.out.println("Recall--->"+result.getRecall());
-		System.out.println("F-Measure--->"+result.getFmeasure());
-		
+	
 		
 		FileWriter fw = null;
 		try {
@@ -378,8 +373,8 @@ public class ProportionFeatures extends FeatureGenerator {
 			int i = 0;
 			for(String predicted:result.getClassLabel()) {
 				Map<String, Object> item = list.get(i);
-				String original = item.get("label").toString();
-				if(predicted.equals(original))  
+				Object original = item.get("label");
+				if(original!=null && predicted.equals(original.toString()))  
 					trueCt++;
 				else 
 					falseCt++;

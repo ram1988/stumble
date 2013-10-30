@@ -351,7 +351,7 @@ public class PropCompFeatures extends FeatureGenerator {
 
 	public static void main(String[] args) throws Exception {
 		PropCompFeatures feat = new PropCompFeatures();
-		String classifier = "logit";
+		String classifier = "stacking";
 
 		//Generating Train Features
 		List<List<Object>> feats = feat.generateFeaturesFromTrainData();
@@ -389,7 +389,7 @@ public class PropCompFeatures extends FeatureGenerator {
 		//Programmatic Classification 
 		//Build Model
 		//Build Model
-		Classifiers classifiers = new WekaClassifier(classifier);
+		Classifiers classifiers = new WekaClassifier(classifier,feat);
 		try {
 			classifiers.trainClassifier(feats,feat.attribNames);
 		} catch (BuildModelException e2) {
@@ -441,11 +441,7 @@ public class PropCompFeatures extends FeatureGenerator {
 		}
 
 
-		//System.out.println("Predicted Class Label--->"+result.getClassLabel());
-		System.out.println("AUC Metric--->"+result.getAUC());
-		System.out.println("Precision--->"+result.getPrecision());
-		System.out.println("Recall--->"+result.getRecall());
-		System.out.println("F-Measure--->"+result.getFmeasure());
+
 
 
 

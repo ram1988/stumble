@@ -1,6 +1,19 @@
 package com.stumbleupon.classifier;
 
 import java.util.List;
+import java.util.Random;
+
+import com.stumbleupon.features.FeatureGenerator;
+
+import weka.classifiers.Classifier;
+import weka.classifiers.Evaluation;
+import weka.classifiers.bayes.NaiveBayes;
+import weka.classifiers.functions.LibSVM;
+import weka.classifiers.functions.MultilayerPerceptron;
+import weka.core.Attribute;
+import weka.core.Instance;
+import weka.core.Instances;
+import weka.core.SparseInstance;
 
 public abstract class Classifiers {
 	
@@ -38,6 +51,10 @@ public abstract class Classifiers {
 		      System.out.println("Dataset: " + trainData.relationName());
 		      System.out.println("Folds: " + numFolds);
 		      System.out.println("Seed: " + seed);
+		      System.out.println("AUC Metric--->"+eval.areaUnderROC(1));
+			  System.out.println("Precision--->"+eval.precision(1));
+			  System.out.println("Recall--->"+eval.recall(1));
+			  System.out.println("F-Measure--->"+eval.fMeasure(1));
 		      System.out.println();
 		      System.out.println(eval.toSummaryString("=== " + numFolds + "-fold Cross-validation run " + (i+1) + "===", false));
 		    }

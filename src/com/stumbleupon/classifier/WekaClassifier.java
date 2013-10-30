@@ -10,6 +10,7 @@ import weka.classifiers.functions.Logistic;
 import weka.classifiers.functions.MultilayerPerceptron;
 import weka.classifiers.meta.Stacking;
 import weka.classifiers.trees.J48;
+import weka.classifiers.trees.RandomForest;
 import weka.core.Attribute;
 import weka.core.Instance;
 import weka.core.Instances;
@@ -26,12 +27,20 @@ public class WekaClassifier extends Classifiers {
 	private String classifier;
 	private String[] attributeNames;
 	private int[] toRetain;
+	private FeatureGenerator generator;
+	
+	
+	public WekaClassifier()  {  }
 	
 	public WekaClassifier(String name) {
 		this.classifier = name;
 	}
 
-
+	public WekaClassifier(String name,FeatureGenerator generator) {
+		this.classifier = name;
+		this.generator = generator;
+	}
+	
 	//have to include training dataset argument
 		public void trainClassifier(List<List<Object>> features, String[] attribNames) throws BuildModelException {
 			
@@ -55,33 +64,37 @@ public class WekaClassifier extends Classifiers {
 			else if(classifier.equals("stacking")) {
 				Stacking ensemble = new Stacking();
 				currentClassifier = ensemble;
-				ensemble.setClassifiers(new Classifier[]{new NaiveBayes(),new MultilayerPerceptron()});
-				ensemble.setMetaClassifier(new LibSVM());
+				ensemble.setClassifiers(new Classifier[]{new NaiveBayes(),new NaiveBayes()});
+				ensemble.setMetaClassifier(new MultilayerPerceptron());
 			}
-			trainingSet = FeatureGenerator.convertToWekaFeatures(features, attribNames,true);
+			else if(classifier.equals("random")) {
+				RandomForest tree = new RandomForest();
+				tree.setNumTrees(3);
+				currentClassifier = tree;
+			}
+			trainingSet = generator.convertToWekaFeatures(features, attribNames,true);
 			//System.out.println("Training the classifier-->"+trainingSet);
-			
+			System.out.println("Training no. of attribs-->"+trainingSet.numAttributes());
 			
 			try {	
 				
-				if(attribNames.length > 10) {
+				if(attribNames.length > 30) {
 					System.out.println("Feature Selection takes place");
 					FeatureSelection ftrSelection = new FeatureSelection();
-					toRetain = ftrSelection.getSelectedIndices(trainingSet, 5);
+					toRetain = ftrSelection.getSelectedIndices(trainingSet, 25);
 					Remove remove = new Remove();
 					remove.setInvertSelection(true);
 					remove.setAttributeIndicesArray(toRetain);
 					remove.setInputFormat(trainingSet);
 					trainingSet = Filter.useFilter(trainingSet, remove);
-					
-					Instance ins = trainingSet.instance(0);
-					System.out.println("No. of attributes-->"+ins.numAttributes());
-					
 				} else {
 					System.out.println("No Feature Selection");
 				}
 				
 				attributeNames = attribNames;
+				//To include cross fold validation
+				System.out.println("K-Fold Cross Validation------");
+				evaluatebyCrossFold(10, trainingSet, currentClassifier);
 				
 				currentClassifier.buildClassifier(trainingSet);
 			} catch (Exception e) {
@@ -99,8 +112,8 @@ public class WekaClassifier extends Classifiers {
 		public  EvalResult testClassifier(List<List<Object>> features) throws EvaluationException {
 			System.out.println("Testing the classifier started");
 			
-			Instances testData = FeatureGenerator.convertToWekaFeatures(features, attributeNames,false);
-			
+			Instances testData = generator.convertToWekaFeatures(features, attributeNames,false);
+			System.out.println("Testing attribs-->"+testData.numAttributes());
 			//System.out.println("Testing the classifier ended "+testData);
 
 			Evaluation testModel = null;
@@ -116,23 +129,36 @@ public class WekaClassifier extends Classifiers {
 			
 				 
 			try {
+				
 				//Object[] predictions = new Object[testData.numInstances()];
 				//System.out.println("classifier-->"+currentClassifier);
 				System.out.println("testData-->"+testData.numInstances());
 				System.out.println("test data print over");
 				
-				if(attributeNames.length > 10) {
+				if(attributeNames.length > 30) {
 					Remove remove = new Remove();
 					remove.setInvertSelection(true);
 					remove.setAttributeIndicesArray(toRetain);
 					remove.setInputFormat(testData);
 					testData = Filter.useFilter(testData, remove);
+					
+					for(int i=0;i<testData.numAttributes();i++) {
+						System.out.print(testData.attribute(i).name()+" ");
+					}
+					
+	
+					
+					Instance ins = testData.instance(0);
+					System.out.println("TestNumAttribs-->"+ins.numAttributes());
+					System.out.println("TrainNumAttribs-->"+trainingSet.numAttributes());
+					/*for(int i=0;i<ins.numAttributes();i++) {
+						System.out.print(ins.attribute(i).name()+"=="+ins.attribute(i).name()+"\n");
+					}*/
 				}
 						
 				result = new EvalResult();
 				//Evaluation on trainingSet
-				//To include cross fold validation
-				//evaluatebyCrossFold(10, trainingSet, currentClassifier);
+				
 				double[] res = testModel.evaluateModel(currentClassifier, trainingSet);
 				System.out.println("Evaluation on training set-->"+testModel.toSummaryString());
 				
@@ -148,9 +174,11 @@ public class WekaClassifier extends Classifiers {
 				//Predicting the test data
 				Attribute classAttrib = testData.classAttribute();
 				for(int i=0;i<testData.numInstances();i++) {
+					//double pred[] = currentClassifier.distributionForInstance(testData.instance(i));
+					//predictions[i] = (  (Double)((pred[0]>pred[1])?pred[0]:pred[1])  ).toString();
 					double pre = currentClassifier.classifyInstance(testData.instance(i)) ;
 					predictions[i] = classAttrib.value((int)pre);
-					System.out.println(predictions[i]+"=="+pre);
+					//System.out.println(predictions[i]+"=="+pre);
 				}
 				//res = testModel.evaluateModel(bayesClassifier, testData);
 				result.setClassLabel(predictions);//yet to find to get the class label

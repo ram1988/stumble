@@ -295,10 +295,11 @@ public class LCFeatures extends FeatureGenerator {
 		return featureList;
 	}
 
-	public static void main(String[] args) {
-
+		
+public static void main(String[] args) {
+		
 		String[] attribNames = new String[21];
-
+	
 		for(int i=0;i<20;i++) {
 			attribNames[i] = "feat"+i;
 		}
@@ -307,26 +308,23 @@ public class LCFeatures extends FeatureGenerator {
 
 		LCFeatures feat = new LCFeatures();
 
-		String classifier = "ann";
-
+		String classifier = "random";
+		
 		//Generating Train Features
 		List<List<Object>> feats = feat.generateFeaturesFromTrainData();
-		FileWriter fw = null;
+		/*FileWriter fw = null;
 		try {
 			fw = new FileWriter("train_mongo_features.csv");
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-
+		
 		BufferedWriter bw = new BufferedWriter(fw);
-
+		
 		try {
-			for(int i=0;i<attribNames.length-1;i++) {
-				bw.write(attribNames[i]+",");
-			}
-			bw.write("class\n");
 			int len = feats.get(0).size();
+			bw.write("evergreen,ephimeral,avglinksize,frameTagRatio,html_ratio,image_ratio,linkwordscore,numberOfLinks,numwords_in_url,spelling_errors_ratio,class\n");
 			for(List<Object> features:feats) {
 				for(int i=0;i<len-1;i++) {
 					bw.write(features.get(i)+",");
@@ -343,43 +341,39 @@ public class LCFeatures extends FeatureGenerator {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		}
-
+		}*/
+	
 		//Programmatic Classification 
 		//Build Model
-		Classifiers classifiers = new WekaClassifier(classifier);
+		Classifiers classifiers = new WekaClassifier(classifier,feat);
 		try {
 			classifiers.trainClassifier(feats,attribNames);
 		} catch (BuildModelException e2) {
 			// TODO Auto-generated catch block
 			e2.printStackTrace();
 		}
-
-
+		
+		
 		//Generating Test Features
 		feats = feat.generateFeaturesFromTestData();
-
-		fw = null;
+		/*fw = null;
 		try {
 			fw = new FileWriter("test_mongo_features.csv");
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-
+		
 		bw = new BufferedWriter(fw);
-
+		
 		try {
-			for(int i=0;i<attribNames.length-1;i++) {
-				bw.write(attribNames[i]+",");
-			}
-			bw.write("class\n");
 			int len = feats.get(0).size();
+			bw.write("evergreen,ephimeral,avglinksize,frameTagRatio,html_ratio,image_ratio,linkwordscore,numberOfLinks,numwords_in_url,spelling_errors_ratio,class\n");
 			for(List<Object> features:feats) {
 				for(int i=0;i<len-1;i++) {
 					bw.write(features.get(i)+",");
 				}
-				bw.write(features.get(len-1)+"\n");//class label
+				bw.write(features.get(len-1)+"\n");
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -391,48 +385,41 @@ public class LCFeatures extends FeatureGenerator {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		}
-
+		}*/
+		
 		//Test Model
 		EvalResult result = null;
 		try {
-			result = classifiers.testClassifier(feats, attribNames);
+			result = classifiers.testClassifier(feats);
 		} catch (EvaluationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-			
-
-
-		//System.out.println("Predicted Class Label--->"+result.getClassLabel());
-		System.out.println("AUC Metric--->"+result.getAUC());
-		System.out.println("Precision--->"+result.getPrecision());
-		System.out.println("Recall--->"+result.getRecall());
-		System.out.println("F-Measure--->"+result.getFmeasure());
-
-
-		fw = null;
+						  
+	
+		
+		FileWriter fw = null;
 		try {
 			fw = new FileWriter("test_labels_"+classifier+".txt");
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-
-		bw = new BufferedWriter(fw);
+		
+		BufferedWriter bw = new BufferedWriter(fw);
 		List<Map<String, Object>> list = getCompetitionFeaturesMap(false,false);
-
+				
 		int trueCt = 0, falseCt = 0;
 		try {
 			int i = 0;
 			for(String predicted:result.getClassLabel()) {
 				Map<String, Object> item = list.get(i);
-				String original = item.get("label")!=null?item.get("label").toString():"";
-				if(predicted.equals(original))  
+				Object original = item.get("label");
+				if(original!=null && predicted.equals(original.toString()))  
 					trueCt++;
 				else 
 					falseCt++;
-
+				
 				bw.write(item.get("urlid").toString()+","+predicted+"\n");
 				i++;
 			}
@@ -449,6 +436,4 @@ public class LCFeatures extends FeatureGenerator {
 			}
 		}
 	}
-
-
 }
