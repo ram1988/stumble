@@ -167,10 +167,10 @@ public class TextProcessing {
 	}
 
 	public static void main(String[] args) throws IOException {
-		String path = "C:\\Users\\sadesh\\Documents\\Apps\\input\\test.tsv";
+		String path = "C:\\NUSModules\\3rd sem\\Assignments\\KDD\\Stumble\\stumbleupon\\data\\test.tsv";
 		File outFile = new File(
-				"C:\\Users\\sadesh\\Documents\\Apps\\input\\testout.txt");
-		File urlidout=new File("C:\\Users\\sadesh\\Documents\\Apps\\input\\urlidout.txt");
+				"C:\\NUSModules\\3rd sem\\Assignments\\KDD\\Stumble\\stumbleupon\\data\\testout.txt");
+		File urlidout=new File("C:\\NUSModules\\3rd sem\\Assignments\\KDD\\Stumble\\stumbleupon\\data\\urlidout.txt");
 		HashMap<String, Integer> stemMap = new HashMap<String, Integer>();
 		try {
 			ArrayList<HashMap<String, String>> list = CSVReader

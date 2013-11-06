@@ -125,8 +125,13 @@ public abstract class FeatureGenerator {
 		else if(isTrainWithin && !isTrain)  {
 			list = db.getDataMaps("train","boilerplate");
 			list = list.subList((int)(0.75*list.size()), list.size() );
-		} else { 
-			list = db.getDataMaps(isTrain?"train":"test","boilerplate");
+		} else {
+			if(isTrain) {
+				list = db.getDataMaps("train","boilerplate");
+			} else {
+				list = db.getDataMaps("test","boilerplate");
+			}
+			
 			//testing
 			//list = list.subList(0,500);
 		}
@@ -141,7 +146,7 @@ public abstract class FeatureGenerator {
 				//System.out.println(json_str);
 				jsonObj = new JSONObject(json_str);
 				//System.out.println(idx+"-->)"+jsonObj.get("title").toString());
-				json_str = (String)jsonObj.get("body").toString().trim().toLowerCase();
+				json_str = jsonObj.get("title").toString().trim().toLowerCase();
 				//json_str = (String)jsonObj.get("url").toString().trim().toLowerCase();
 			} catch (JSONException e) {
 				// TODO Auto-generated catch block
@@ -239,10 +244,11 @@ public abstract class FeatureGenerator {
 				featureVectors.addElement(new Attribute(attrib));
 			} 
 			else if(str instanceof String) {
-				if(attrib.equals("alchemy_category")) {
+				if(attrib!=null && attrib.equals("alchemy_category")) {
 					featureVectors.addElement(new Attribute(attrib,alchemy_catogories));
 				}
 				else {
+					System.out.println("StringAttrib-->"+attrib);
 					featureVectors.addElement(new Attribute(attrib,(FastVector)null));
 				}
 			}
@@ -258,7 +264,7 @@ public abstract class FeatureGenerator {
 		//}
 		
 		Attribute classAttrib = new Attribute(attributeNames[attributeNames.length-1],classVector);
-		featureVectors.addElement(classAttrib);
+		featureVectors.insertElementAt(classAttrib, attributeNames.length-1);
 		
 		featureSet = new Instances("StumbleFeatures", featureVectors, 10);
 		featureSet.setClassIndex(attributeNames.length-1);
@@ -266,15 +272,19 @@ public abstract class FeatureGenerator {
 		//Forming Weka Instances
 		for(List<Object> list:features) {
 			Instance feat = new Instance(attributeNames.length);
-			//System.out.println("length-->"+attributeNames.length);
+			//System.out.println("length-->"+attributeNames.length+"list size-->"+list.size());
 			idx = 0;
 			for(Object str:list) {
-				System.out.println(idx);
-				System.out.println(str);
+				//System.out.println(idx);
+				//System.out.println(str);
 				if(str instanceof Double) {
+					//System.out.println("Attrib=->"+((Attribute)featureVectors.elementAt(idx)).name());
 					feat.setValue((Attribute)featureVectors.elementAt(idx),(Double)str);
 				} 
 				else if(str instanceof String) {
+					//System.out.println("Value-->"+idx);
+					//System.out.println("Attrib=->"+((Attribute)featureVectors.elementAt(idx)).name());
+					
 					feat.setValue((Attribute)featureVectors.elementAt(idx),str.toString());
 				} 
 				else if(str instanceof Integer) {

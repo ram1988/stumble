@@ -21,7 +21,7 @@ public abstract class Classifiers {
 	public abstract EvalResult testClassifier(List<List<Object>> features) throws EvaluationException;
 	
 	public void evaluatebyCrossFold(int numFolds,Instances trainData,Classifier cls ) throws Exception {
-		 for (int i = 0; i < 2; i++) {
+		 for (int i = 0; i < 1; i++) {
 		      // randomize data
 		      int seed = i + 1;
 		      Random rand = new Random(seed);

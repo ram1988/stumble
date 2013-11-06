@@ -53,10 +53,10 @@ public class SVMClassifier {
         String outputFileName = args[2];
         String outputFileName1=outputFileName+"1";
         String urlidfile=args[3];
-        
+        System.out.println("ENtering");
         //Read training file
         Instance[] trainingInstances = DataFileReader.readDataFile(trainFileName);        
-        
+        System.out.println("ss");
         //Register kernel function
         KernelManager.setCustomKernel(new LinearKernel());        
         
@@ -73,7 +73,7 @@ public class SVMClassifier {
         //model = SVMPredictor.load_model("a1a.model");
         
         //Read test file
-        
+        System.out.println("Doing");
         ca.uwo.csd.ai.nlp.libsvm.ex.Instance[] testingInstances = DataFileReader.readDataFile(testFileName);
         //Predict results
         double[] predictions = SVMPredictor.predict(testingInstances, model, true);

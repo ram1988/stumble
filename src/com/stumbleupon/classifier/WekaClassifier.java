@@ -2,6 +2,9 @@ package com.stumbleupon.classifier;
 
 import java.util.List;
 
+import weka.attributeSelection.AttributeSelection;
+import weka.attributeSelection.PrincipalComponents;
+import weka.attributeSelection.Ranker;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.classifiers.bayes.NaiveBayes;
@@ -64,12 +67,12 @@ public class WekaClassifier extends Classifiers {
 			else if(classifier.equals("stacking")) {
 				Stacking ensemble = new Stacking();
 				currentClassifier = ensemble;
-				ensemble.setClassifiers(new Classifier[]{new NaiveBayes(),new NaiveBayes()});
-				ensemble.setMetaClassifier(new MultilayerPerceptron());
+				ensemble.setClassifiers(new Classifier[]{new NaiveBayes(),new LibSVM()});
+				ensemble.setMetaClassifier(new Logistic());
 			}
 			else if(classifier.equals("random")) {
 				RandomForest tree = new RandomForest();
-				tree.setNumTrees(3);
+				tree.setNumTrees(5);
 				currentClassifier = tree;
 			}
 			trainingSet = generator.convertToWekaFeatures(features, attribNames,true);
@@ -81,12 +84,28 @@ public class WekaClassifier extends Classifiers {
 				if(attribNames.length > 30) {
 					System.out.println("Feature Selection takes place");
 					FeatureSelection ftrSelection = new FeatureSelection();
-					toRetain = ftrSelection.getSelectedIndices(trainingSet, 25);
+					toRetain = ftrSelection.getSelectedIndices(trainingSet, 100);
 					Remove remove = new Remove();
 					remove.setInvertSelection(true);
 					remove.setAttributeIndicesArray(toRetain);
 					remove.setInputFormat(trainingSet);
 					trainingSet = Filter.useFilter(trainingSet, remove);
+					
+					System.out.println("Feature Reduction takes place");
+					PrincipalComponents lsa = new PrincipalComponents();
+					AttributeSelection selecter = new AttributeSelection();
+					Ranker rank = new Ranker();
+					
+					selecter.setEvaluator(lsa);
+					selecter.setSearch(rank);
+					//selecter.setRanking(true);
+					try {
+						selecter.SelectAttributes(trainingSet);
+						trainingSet = selecter.reduceDimensionality(trainingSet);
+					} catch (Exception e4) {
+						// TODO Auto-generated catch block
+						e4.printStackTrace();
+					}
 				} else {
 					System.out.println("No Feature Selection");
 				}
@@ -142,11 +161,24 @@ public class WekaClassifier extends Classifiers {
 					remove.setInputFormat(testData);
 					testData = Filter.useFilter(testData, remove);
 					
-					for(int i=0;i<testData.numAttributes();i++) {
+					/*for(int i=0;i<testData.numAttributes();i++) {
 						System.out.print(testData.attribute(i).name()+" ");
-					}
+					}*/
 					
-	
+					PrincipalComponents lsa = new PrincipalComponents();
+					AttributeSelection selecter = new AttributeSelection();
+					Ranker rank = new Ranker();
+					
+					selecter.setEvaluator(lsa);
+					selecter.setSearch(rank);
+					//selecter.setRanking(true);
+					try {
+						selecter.SelectAttributes(testData);
+						testData = selecter.reduceDimensionality(testData);
+					} catch (Exception e4) {
+						// TODO Auto-generated catch block
+						e4.printStackTrace();
+					}
 					
 					Instance ins = testData.instance(0);
 					System.out.println("TestNumAttribs-->"+ins.numAttributes());

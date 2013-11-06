@@ -47,6 +47,7 @@ public class ProportionFeatures extends FeatureGenerator {
 					processedString = (String)jsonObj.get("body").toString();
 				} catch (JSONException e) {
 					// TODO Auto-generated catch block
+					processedString = "";
 					e.printStackTrace();
 				}
 				
@@ -267,7 +268,7 @@ public class ProportionFeatures extends FeatureGenerator {
 		
 		ProportionFeatures feat = new ProportionFeatures();
 		
-		String classifier = "ann";
+		String classifier = "stacking";
 		
 		//Generating Train Features
 		List<List<Object>> feats = feat.generateFeaturesFromTrainData();
@@ -355,7 +356,7 @@ public class ProportionFeatures extends FeatureGenerator {
 			e.printStackTrace();
 		}
 						  
-	
+		
 		
 		FileWriter fw = null;
 		try {

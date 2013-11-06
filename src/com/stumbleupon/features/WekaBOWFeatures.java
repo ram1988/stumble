@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -13,12 +14,18 @@ import java.util.Random;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import weka.attributeSelection.AttributeSelection;
+import weka.attributeSelection.LatentSemanticAnalysis;
+import weka.attributeSelection.PrincipalComponents;
+import weka.attributeSelection.Ranker;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.classifiers.bayes.NaiveBayes;
+import weka.classifiers.bayes.NaiveBayesMultinomial;
 import weka.classifiers.functions.LibSVM;
 import weka.classifiers.functions.Logistic;
 import weka.classifiers.functions.MultilayerPerceptron;
+import weka.classifiers.lazy.IBk;
 import weka.classifiers.meta.Stacking;
 import weka.classifiers.trees.J48;
 import weka.classifiers.trees.RandomForest;
@@ -56,11 +63,16 @@ public class WekaBOWFeatures extends FeatureGenerator {
 			List<Object> feats = new ArrayList<Object>();
 
 			try {
-				processedString = formatStringToJSON(str.get("boilerplate").toString());
-				jsonObj = new JSONObject(processedString);
-				processedString = (String)jsonObj.get("body").toString().toLowerCase();
+				//full text
+				processedString = str.get("boilerplate").toString();
+				
+				//body or title+url
+				//processedString = formatStringToJSON(str.get("boilerplate").toString());
+				//jsonObj = new JSONObject(processedString);
+				//processedString = (String)jsonObj.get("body").toString().toLowerCase();
+				//processedString = jsonObj.get("url").toString().toLowerCase()+jsonObj.get("title").toString().toLowerCase();	
 				processedString = processedString.trim().replaceAll("[^0-9a-z\\s]","");
-				processedString = processedString.trim().replaceAll("[0-9]","");
+				processedString = processedString.trim().replaceAll("[0-9]","");				
 				feats.add(processedString);
 
 				Map<String, Object> item = list.get(idx);
@@ -69,7 +81,8 @@ public class WekaBOWFeatures extends FeatureGenerator {
 
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				System.out.println("Doc--->"+idx);
+				//e.printStackTrace();
 			}
 
 			featureList.add(feats);
@@ -91,9 +104,14 @@ public class WekaBOWFeatures extends FeatureGenerator {
 			List<Object> feats = new ArrayList<Object>();
 
 			try {
-				processedString = formatStringToJSON(str.get("boilerplate").toString());
-				jsonObj = new JSONObject(processedString);
-				processedString = (String)jsonObj.get("body").toString().toLowerCase();
+				//full text
+				processedString = str.get("boilerplate").toString();
+				
+				//body or title+url
+				//processedString = formatStringToJSON(str.get("boilerplate").toString());
+				//jsonObj = new JSONObject(processedString);
+				//processedString = (String)jsonObj.get("body").toString().toLowerCase();
+				//processedString = jsonObj.get("url").toString().toLowerCase()+jsonObj.get("title").toString().toLowerCase();	
 				processedString = processedString.trim().replaceAll("[^0-9a-z\\s]","");
 				processedString = processedString.trim().replaceAll("[0-9]","");
 				feats.add(processedString);
@@ -101,7 +119,7 @@ public class WekaBOWFeatures extends FeatureGenerator {
 
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				System.out.println("Doc--->"+idx);
 			}
 
 			featureList.add(feats);
@@ -117,7 +135,8 @@ public class WekaBOWFeatures extends FeatureGenerator {
 		filter = new StringToWordVector();
 		filter.setTFTransform(true);
 		filter.setIDFTransform(true);
-		//filter.setUseStoplist(true);
+		filter.setUseStoplist(true);
+		filter.setMinTermFreq(8);
 		//NGramTokenizer  wt = new NGramTokenizer();
 		//String delimiters = " \r\t\n.,;:\'\"()?!-><#$\\%&*+/@^_=[]{}|`~0123456789";
 		//wt.setDelimiters(delimiters);
@@ -209,7 +228,7 @@ public class WekaBOWFeatures extends FeatureGenerator {
 	}
 
 	public void evaluatebyCrossFold(int numFolds,Instances trainData,Classifier cls ) throws Exception {
-		 for (int i = 0; i < 2; i++) {
+		 for (int i = 0; i < 1; i++) {
 		      // randomize data
 		      int seed = i + 1;
 		      Random rand = new Random(seed);
@@ -248,13 +267,38 @@ public class WekaBOWFeatures extends FeatureGenerator {
 		    }
 		  }
 	
+	public Map<String,Integer> getTerms() {
+		List<List<Object>> feats = generateFeaturesFromTrainData();
+		List<List<Object>> test_feats = generateFeaturesFromTestData();
+		
+		String[] attribNames = {"content","clazzz"};
+		
+		feats.addAll(test_feats);
+
+		Instances wekaInstances = convertToWekaFeatures(feats, attribNames, true);		
+		wekaInstances = convertToStringWordVector(wekaInstances);
+		wekaInstances.setClassIndex(0);
+		
+		System.out.println("Size--->"+wekaInstances.numInstances());
+		System.out.println("Feature Selection going on-->"+wekaInstances.instance(0).numAttributes());
+		
+		 Map<String,Integer> terms = new HashMap<String,Integer>();
+		
+		Instance ins1 = wekaInstances.instance(0);
+		for(int i=0;i<ins1.numAttributes();i++) {
+			terms.put(ins1.attribute(i).name(),0);
+		}
+		
+		return terms;
+	}
+	
 	public static void main(String[] args) {
 
 		String[] attribNames = {"content","clazzz"};
 
 		WekaBOWFeatures feat = new WekaBOWFeatures();
 
-		String classifier = "ann";
+		String classifier = "stacking";
 
 		//Generating Train Features
 		System.out.println("Preparing Train BOW");
@@ -265,8 +309,54 @@ public class WekaBOWFeatures extends FeatureGenerator {
 
 		Instances wekaInstances = feat.convertToWekaFeatures(feats, attribNames, true);		
 		wekaInstances = convertToStringWordVector(wekaInstances);
+		wekaInstances.setClassIndex(0);
 		
 		System.out.println("Size--->"+wekaInstances.numInstances());
+		System.out.println("Feature Selection going on-->"+wekaInstances.instance(0).numAttributes());
+		
+		/*Instance ins1 = wekaInstances.instance(0);
+		for(int i=0;i<ins1.numAttributes();i++) {
+			System.out.print(ins1.attribute(i).name()+"\n");
+		}*/
+		/*
+		//Feature Selection
+		int []toRetain = null;
+		
+		
+		FeatureSelection ftrSelection = new FeatureSelection();
+		try {
+			toRetain = ftrSelection.getSelectedIndices(wekaInstances, 100);
+			Remove remove = new Remove();
+			remove.setInvertSelection(true);
+			remove.setAttributeIndicesArray(toRetain);
+			remove.setInputFormat(wekaInstances);
+			wekaInstances = Filter.useFilter(wekaInstances, remove);
+		} catch (Exception e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
+		
+		System.out.println("Feature Reduction going on");
+		
+		PrincipalComponents lsa = new PrincipalComponents();
+		AttributeSelection selecter = new AttributeSelection();
+		Ranker rank = new Ranker();
+		
+		selecter.setEvaluator(lsa);
+		selecter.setSearch(rank);
+		//selecter.setRanking(true);
+		try {
+			selecter.SelectAttributes(wekaInstances);
+			wekaInstances = selecter.reduceDimensionality(wekaInstances);
+		} catch (Exception e4) {
+			// TODO Auto-generated catch block
+			e4.printStackTrace();
+		}
+
+		*/
+		
+				 
+		System.out.println("10 FOLD cross validation");
 		
 		Instances trainData = new Instances(wekaInstances,0,7395);
 		for(int i=0;i<=7394;i++)  {
@@ -274,13 +364,14 @@ public class WekaBOWFeatures extends FeatureGenerator {
 			wekaInstances.delete(0);
 		}
 		System.out.println("Size--->"+wekaInstances.numInstances());
-		Instances testData = new Instances(wekaInstances,0,wekaInstances.numInstances()-1);
+		Instances testData = new Instances(wekaInstances,0,wekaInstances.numInstances());
 		wekaInstances = null;
 		
 		Classifier currentClassifier = null;
 		
 		if(classifier.equals("bayes")) {
-			currentClassifier = new NaiveBayes();
+			//0.79604 - Best Score
+			currentClassifier = new NaiveBayesMultinomial();
 		}
 		else if(classifier.equals("svm")) {
 			currentClassifier = new LibSVM();
@@ -294,33 +385,29 @@ public class WekaBOWFeatures extends FeatureGenerator {
 		else if(classifier.equals("dectree")) {
 			currentClassifier = new J48();
 		}
+		else if(classifier.equals("knn")) {
+			currentClassifier = new IBk();
+		}
 		else if(classifier.equals("stacking")) {
 			Stacking ensemble = new Stacking();
 			currentClassifier = ensemble;
-			ensemble.setClassifiers(new Classifier[]{new NaiveBayes(),new NaiveBayes()});
-			ensemble.setMetaClassifier(new MultilayerPerceptron());
+			ensemble.setClassifiers(new Classifier[]{new NaiveBayesMultinomial(),new IBk()});
+			ensemble.setMetaClassifier(new NaiveBayesMultinomial());
 		}
 		else if(classifier.equals("random")) {
+			//Random  Forest is best with 60. giving 0.79714->CV Score = 0.86 - Unigram
 			RandomForest tree = new RandomForest();
-			tree.setNumTrees(2);
+			tree.setNumTrees(20);
 			currentClassifier = tree;
 		}
 		
 		//Programmatic Classification 
 		
 		//Build Model
-		int []toRetain = null;
+		
+		
 		try {
-			/*FeatureSelection ftrSelection = new FeatureSelection();
-			toRetain = ftrSelection.getSelectedIndices(train_feats, 25);
-			Remove remove = new Remove();
-			remove.setInvertSelection(true);
-			remove.setAttributeIndicesArray(toRetain);
-			remove.setInputFormat(train_feats);
-			train_feats = Filter.useFilter(train_feats, remove);*/
-			System.out.println("10 FOLD cross validation");
-			feat.evaluatebyCrossFold(10, trainData, currentClassifier);
-			
+			feat.evaluatebyCrossFold(10, trainData, currentClassifier);			
 			currentClassifier.buildClassifier(trainData);
 		} catch (Exception e3) {
 			// TODO Auto-generated catch block
@@ -350,7 +437,7 @@ public class WekaBOWFeatures extends FeatureGenerator {
 			e.printStackTrace();
 		}
 		
-			 
+		String[] predictions = null;	 
 		try {
 			
 			//Object[] predictions = new Object[testData.numInstances()];
@@ -374,7 +461,7 @@ public class WekaBOWFeatures extends FeatureGenerator {
 			
 			
 			//Predicting the test data
-			String[] predictions = new String[testData.numInstances()];
+			predictions = new String[testData.numInstances()];
 			 
 			//Predicting the test data
 			Attribute classAttrib = testData.classAttribute();
@@ -392,10 +479,10 @@ public class WekaBOWFeatures extends FeatureGenerator {
 		}
 		
 		
-		Instance ins1 = trainData.instance(0);
+		/*ins1 = trainData.instance(0);
 		for(int i=0;i<ins1.numAttributes();i++) {
 			System.out.print(ins1.attribute(i).name()+"\n");
-		}
+		}*/
 		System.out.println();
 		
 		FileWriter fw = null;
