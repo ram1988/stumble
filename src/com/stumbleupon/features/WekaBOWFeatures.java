@@ -136,7 +136,7 @@ public class WekaBOWFeatures extends FeatureGenerator {
 		filter.setTFTransform(true);
 		filter.setIDFTransform(true);
 		filter.setUseStoplist(true);
-		filter.setMinTermFreq(8);
+		filter.setMinTermFreq(20);
 		//NGramTokenizer  wt = new NGramTokenizer();
 		//String delimiters = " \r\t\n.,;:\'\"()?!-><#$\\%&*+/@^_=[]{}|`~0123456789";
 		//wt.setDelimiters(delimiters);
@@ -298,7 +298,7 @@ public class WekaBOWFeatures extends FeatureGenerator {
 
 		WekaBOWFeatures feat = new WekaBOWFeatures();
 
-		String classifier = "stacking";
+		String classifier = "random";
 
 		//Generating Train Features
 		System.out.println("Preparing Train BOW");
@@ -397,7 +397,7 @@ public class WekaBOWFeatures extends FeatureGenerator {
 		else if(classifier.equals("random")) {
 			//Random  Forest is best with 60. giving 0.79714->CV Score = 0.86 - Unigram
 			RandomForest tree = new RandomForest();
-			tree.setNumTrees(20);
+			tree.setNumTrees(40);
 			currentClassifier = tree;
 		}
 		
