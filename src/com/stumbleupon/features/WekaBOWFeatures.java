@@ -298,7 +298,8 @@ public class WekaBOWFeatures extends FeatureGenerator {
 
 		WekaBOWFeatures feat = new WekaBOWFeatures();
 
-		String classifier = "random";
+		String classifier = "svm";
+		String feat_sel = "iglsa";
 
 		//Generating Train Features
 		System.out.println("Preparing Train BOW");
@@ -311,21 +312,28 @@ public class WekaBOWFeatures extends FeatureGenerator {
 		wekaInstances = convertToStringWordVector(wekaInstances);
 		wekaInstances.setClassIndex(0);
 		
+		
 		System.out.println("Size--->"+wekaInstances.numInstances());
 		System.out.println("Feature Selection going on-->"+wekaInstances.instance(0).numAttributes());
 		
-		/*Instance ins1 = wekaInstances.instance(0);
-		for(int i=0;i<ins1.numAttributes();i++) {
-			System.out.print(ins1.attribute(i).name()+"\n");
-		}*/
-		/*
+		double[] d = new double[wekaInstances.numAttributes()];
+		for(int i=0;i<d.length;i++) {
+			d[i] = 0.0;
+		}
+		
+		
+		for(int i=0;i<wekaInstances.numInstances();i++) {
+			wekaInstances.instance(i).replaceMissingValues(d);
+		}
+		System.out.println("Missed values replaced");
+		
 		//Feature Selection
 		int []toRetain = null;
 		
 		
 		FeatureSelection ftrSelection = new FeatureSelection();
 		try {
-			toRetain = ftrSelection.getSelectedIndices(wekaInstances, 100);
+			toRetain = ftrSelection.getSelectedIndices(wekaInstances, 60);
 			Remove remove = new Remove();
 			remove.setInvertSelection(true);
 			remove.setAttributeIndicesArray(toRetain);
@@ -336,9 +344,14 @@ public class WekaBOWFeatures extends FeatureGenerator {
 			e2.printStackTrace();
 		}
 		
+		
+	
 		System.out.println("Feature Reduction going on");
 		
-		PrincipalComponents lsa = new PrincipalComponents();
+		//PrincipalComponents lsa = new PrincipalComponents();
+		LatentSemanticAnalysis lsa = new LatentSemanticAnalysis();
+		lsa.setMaximumAttributeNames(50);
+		//lsa.setVarianceCovered(0.8);
 		AttributeSelection selecter = new AttributeSelection();
 		Ranker rank = new Ranker();
 		
@@ -353,12 +366,13 @@ public class WekaBOWFeatures extends FeatureGenerator {
 			e4.printStackTrace();
 		}
 
-		*/
+		
 		
 				 
 		System.out.println("10 FOLD cross validation");
 		
 		Instances trainData = new Instances(wekaInstances,0,7395);
+		System.out.println("trainDataAttrib-->"+trainData.numAttributes());
 		for(int i=0;i<=7394;i++)  {
 			//System.out.println(i);
 			wekaInstances.delete(0);
@@ -397,7 +411,7 @@ public class WekaBOWFeatures extends FeatureGenerator {
 		else if(classifier.equals("random")) {
 			//Random  Forest is best with 60. giving 0.79714->CV Score = 0.86 - Unigram
 			RandomForest tree = new RandomForest();
-			tree.setNumTrees(40);
+			tree.setNumTrees(50);
 			currentClassifier = tree;
 		}
 		
@@ -487,7 +501,7 @@ public class WekaBOWFeatures extends FeatureGenerator {
 		
 		FileWriter fw = null;
 		try {
-			fw = new FileWriter("wekabow_test_labels_"+classifier+".txt");
+			fw = new FileWriter("wekabow_test_labels_"+classifier+"_"+feat_sel+".txt");
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -516,7 +530,6 @@ public class WekaBOWFeatures extends FeatureGenerator {
 			e.printStackTrace();
 		} finally {
 			try {
-				bw.write("Truely classifiedsvm-->"+trueCt+"------Falsely classified--->"+falseCt);
 				bw.close();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block

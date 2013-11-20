@@ -9,6 +9,7 @@ public class FeatureSelection {
 		System.out.println("Analyzing attributes");
 		AttributeSelection attrSel = new AttributeSelection();
 		InfoGainAttributeEval eval = new InfoGainAttributeEval();
+		//GainRatioAttributeEval eval = new GainRatioAttributeEval();
 		Ranker rnkr = new Ranker();
 		attrSel.setEvaluator(eval);
 		attrSel.setSearch(rnkr);
